@@ -13,9 +13,9 @@ This project is a MERN App to help the "intermittent du spectacle" to manage the
 
 ## V1 :
 
-- Page Create a new active folder
-- Page form to add several incomes at this folder
-- Delete / update income fonctionality
+- Form page to create a new active folder
+- Form page to add several incomes at this folder
+- Delete / update income functionality
 - Calculation of different rates
 - Autocompletion of employer's names
 - Responsive
@@ -27,7 +27,7 @@ This project is a MERN App to help the "intermittent du spectacle" to manage the
 - Add confirmation modal to delete income
 - Statistic page with Highcharts
 - User authentification
-- Add fonctionality of simulate 
+- Add functionality of simulate 
 
 ## Server start
 To start the server, you can run :
