@@ -1,0 +1,58 @@
+
+.tableCollapse{
+  height: 0;
+}
+
+.tableExpand{
+  height: 100%;
+}
+
+ .rdt_Table{
+  margin-top:10px;
+  margin-bottom: 15px;
+}
+
+.tags{
+  display: flex;
+}
+
+.tag{
+  background-color: white;
+  color: #084C88;
+  font-weight:bold;
+  border-radius: 3px;
+  padding: 8px 13px 8px 13px;
+  margin:5px;
+  font-size:13px;
+  cursor:pointer;
+}
+
+.MuiTextField-root, .MuiAutocomplete-root{
+  width: 100%;
+}
+
+.month{
+  width:100%;
+  box-shadow: 0 4px 12px 0 rgba(119,153,166,0.5);
+  padding: 15px;
+  background-color: #084C88;
+  color:white;
+  border-radius: 5px;
+  margin-bottom: 7px;
+  cursor: pointer;
+}
+
+.monthHeader, .folderHeader{
+  display: flex;
+  justify-content: space-between;
+}
+
+.folderHeader{
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+.month:hover{
+  transition: opacity 0.5s ease;
+  opacity: 0.8;
+}
