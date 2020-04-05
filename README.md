@@ -1,16 +1,17 @@
 This project is a MERN App to help the "intermittent du spectacle" to manage their income easily and friendly.
 
-Mongo db : Database no SQL
-Express.js : RESTful APIs
-React.js : Javascript Front-end library 
-Node.js : A javascript runtime
+- Mongo db : Database no SQL
+- Express.js : RESTful APIs
+- React.js : Javascript Front-end library 
+- Node.js : A javascript runtime
 
 ## Package used
 
-Material UI
-Bootstrap
+- Material UI
+- Mongoose
+- Bootstrap
 
-## fonctionnalities V1 :
+## V1 :
 
 - Page Create a new active folder
 - Page form to add several incomes at this folder
@@ -20,7 +21,7 @@ Bootstrap
 - Responsive
 - Manage upload of documents
 
-## fonctionnalities V2 :
+## V2 :
 
 - Archive page to see the old folders
 - Add confirmation modal to delete income
@@ -29,7 +30,6 @@ Bootstrap
 - Add fonctionality of simulate 
 
 ## Server start
-
 To start the server, you can run :
 
 in src/server
