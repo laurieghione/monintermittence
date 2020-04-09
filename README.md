@@ -10,6 +10,8 @@ This project is a MERN App to help the "intermittent du spectacle" to manage the
 - Material UI
 - Mongoose
 - Bootstrap
+- Styled components
+- Moment
 
 ## V1 :
 

@@ -13,9 +13,10 @@ class App extends React.Component {
       <Router>
          <Navbar />
          <Switch>
-                <Route path="/folder/form" exact component={FolderModal} />
+                <Route path="/folder/form" component={FolderModal} />
                 <Route path="/declarations/list" exact component={Summary} />
-                <Route path="/declarations/form" exact component={DeclarationForm} />
+                <Route path="/declarations/form/:id" component={DeclarationForm} />
+                <Route path="/declarations/form" component={DeclarationForm} />
           </Switch>
       </Router>
     );

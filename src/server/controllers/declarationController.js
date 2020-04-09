@@ -78,10 +78,54 @@ const getDeclarationById = async (req, res) => {
     }).catch(err => console.log(err))
 }
 
+const updateDeclaration = async (req, res) => {
+    const body = req.body
+
+    if (!body) {
+        return res.status(400).json({
+            success: false,
+            error: 'You must provide a body to update',
+        })
+    }
+
+    DeclarationModel.findOne({ _id: req.params.id }, (err, declaration) => {
+        if (err) {
+            return res.status(404).json({
+                err,
+                message: 'Declaration not found!',
+            })
+        }
+        declaration.annexe = body.annexe
+        declaration.dateStart = body.dateStart
+        declaration.dateEnd = body.dateEnd
+        declaration.employer = body.employer
+        declaration.label = body.label
+        declaration.nbhours = body.nbhours
+        declaration.netSalary = body.netSalary
+        declaration.grossSalary = body.grossSalary
+        declaration
+            .save()
+            .then(() => {
+                return res.status(200).json({
+                    success: true,
+                    id: declaration._id,
+                    message: 'Declaration updated!',
+                })
+            })
+            .catch(error => {
+                return res.status(404).json({
+                    error,
+                    message: 'Declaration not updated!',
+                })
+            })
+    })
+}
+
 
 module.exports = {
     getDeclarations,
     createDeclaration,
     getDeclarationById,
-    deleteDeclaration
+    deleteDeclaration,
+    updateDeclaration
 }

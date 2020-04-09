@@ -9,6 +9,7 @@ import moment from 'moment';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import { TextField, MenuItem} from '@material-ui/core';
 import Employer from '../model/employer';
+import { RouteProps } from 'react-router';
 
 const Title = styled.h2.attrs({
     className: 'h2',
@@ -38,7 +39,6 @@ const CancelButton = styled.a.attrs({
 `
 
 interface DFProps  {
-
 }
 
 interface DFState  {
@@ -47,8 +47,10 @@ interface DFState  {
   disabledHours : boolean,
   disabledDateEnd : boolean,
   folder: Folder,
+  isEdit: boolean,
   employer: Employer[],
-  redirect: boolean
+  redirect: boolean,
+  employerSelected: any | null
 }
 
 const annexe = [
@@ -66,8 +68,8 @@ const annexe = [
   }
 ];
 
-
-export class DeclarationForm extends React.Component<DFProps, DFState>{
+export class DeclarationForm extends React.Component<DFProps & RouteProps, DFState>{
+  private params: any;
 
   constructor ( props : DFProps){
     super(props)
@@ -78,6 +80,8 @@ export class DeclarationForm extends React.Component<DFProps, DFState>{
       disabledHours : false,
       disabledDateEnd: false,
       redirect: false,
+      isEdit: false,
+      employerSelected: null,
       employer: []
     }
   }
@@ -136,7 +140,6 @@ export class DeclarationForm extends React.Component<DFProps, DFState>{
 
     handleValidation = () => {
       let formIsValid: boolean = true;
-      console.log(this.state.declaration)
 
       if(this.state.declaration.annexe === ''){
         formIsValid = false;
@@ -155,24 +158,17 @@ export class DeclarationForm extends React.Component<DFProps, DFState>{
     }
   
     handleSubmit = (event : any) => {
-
-      const {declaration, employer} = this.state
-
       event.preventDefault();
+      let {declaration, employer, redirect, error } = this.state
 
       let formIsValid = this.handleValidation();
-      let employerExist: boolean = false;
+      let employerExist:any;
 
       if(formIsValid){
         // Manage employer
-        employer.map((empl)=>{
-          if(empl.name === declaration.employer){
-              employerExist = true;
-          }
-          return employerExist;
-        })
+        employerExist = employer.find(empl => empl.name === declaration.employer)
 
-        if(!employerExist){
+        if(employerExist === undefined){
           let empl: Employer = new Employer()
           empl.name = declaration.employer
 
@@ -182,202 +178,309 @@ export class DeclarationForm extends React.Component<DFProps, DFState>{
           });
         }
 
-        api.insertDeclaration(declaration).then(() => {
-          window.alert(`La déclaration a bien été ajoutée`);
-           this.setState({redirect: true});
-        }).catch((error) => {
-          console.error(error);
-        });
+        if(this.state.isEdit){
+          api.updateDeclarationById(declaration.id, declaration).then(() => {
+            window.alert(`La déclaration a bien été modifiée`);
+             redirect = true
+          }).catch((error: any) => {
+            console.error(error);
+          });
+        }else{
+          api.updateDeclarationById(declaration).then(() => {
+            window.alert(`La déclaration a bien été ajoutée`);
+            redirect = true
+          }).catch((error) => {
+            console.error(error);
+          });
+        }
       }else
       {
-        this.setState({error:true})
+        error = true
       }
+      this.setState({redirect, error});
     }
 
-    componentDidMount= () =>{
-
-      api.getActiveFolder().then(res => {
-        let newDeclaration = this.state.declaration;
-        if(res.data.data){
-          newDeclaration.folder = res.data.data._id
-          this.setState({declaration: newDeclaration, folder: res.data.data})
+    getParams = async(): Promise<string> => {
+        this.params = this.props
+        return new Promise((resolve) => {
+          console.log("get params")
+          if(this.params.match.params.id){
+            resolve(this.params.match.params.id)
+        }else{
+          resolve()
         }
-      }).catch((error) => {
-        console.error(error);
-      });
+       })
+    };
 
-      api.getEmployers().then(res => {
-        if(res.data.data){
-          this.setState({employer: res.data.data})
-        }
-      }).catch((error) => {
-        console.error(error);
-      });
+    getEmployers = async(): Promise<any> =>{
+      return new Promise((resolve, reject) => {
+        api.getEmployers().then(res => {
+          console.log("get getEmployers")
+          if(res.data.data){
+            resolve(res.data.data)
+          }
+        }).catch((error) => {
+          reject(error)
+        });
+      })
     }
+
+    getActiveFolder = async() : Promise<Folder> =>{
+      return new Promise((resolve, reject) => {
+        console.log("get active folder")
+        api.getActiveFolder().then(res => {
+          if(res.data.data){
+            resolve(res.data.data) 
+          }
+        }).catch((error) => {
+          reject(error)
+        });
+    });
+    }
+
+    getDeclaration = async(id: string): Promise<any> => {
+      let declarationUpdate: any
+      return new Promise((resolve, reject) => {
+        console.log("get getDeclaration")
+        if(id){
+          api.getDeclarationById(id).then(res =>{
+            declarationUpdate = res.data.data
+            declarationUpdate.id = res.data.data._id
+            resolve(declarationUpdate)
+          }).catch((error) => {
+            reject(error)
+          });
+        }else{
+          resolve()
+        }
+      })
+     }
+
+    componentDidMount = async () =>{
+      let {declaration, folder, employer, employerSelected, isEdit } = this.state
+      console.log('componentmount')
+      await this.getParams().then(
+        (id: any) => {
+          isEdit = (id ? true : false) 
+           this.getActiveFolder().then((fold)=>{
+            folder = fold
+            declaration.folder = fold.id
+          })
+          this.getEmployers().then((employers)=>{
+            employer = employers
+            this.getDeclaration(id).then((decla)=>{
+              if(isEdit){
+                declaration = decla
+                employerSelected = this.getEmployerDeclarationUpdate(employers, decla)
+              }
+                this.setState({ isEdit, declaration, employer, folder, employerSelected });
+              })
+          })        
+        })
+    }
+
+    componentDidUpdate= async(prevProps: any)=> {
+      this.params = this.props
+      
+      if( this.params.match.params.id !== prevProps.match.params.id){
+        let {employer, isEdit } = this.state
+        let declaration = new Declaration();
+        let employerSelected:any = null
+
+        await this.getParams().then(
+          (id: string) => {
+            isEdit = (id ? true : false) 
+           
+              this.getDeclaration(id).then((decla)=>{
+                if(isEdit){
+                  declaration = decla
+                  employerSelected = this.getEmployerDeclarationUpdate(employer, decla)  
+                }
+                this.setState({ isEdit, declaration, employerSelected });          
+              })
+             })
+          }
+        }
+
+    getEmployerDeclarationUpdate = (employers :any, declaration:any): Declaration => {     
+      let employerSelected = this.state.employerSelected
+      console.log("employerSelected")
+
+      employerSelected = employers.find((emp: any) => emp.name === declaration.employer)
+
+      return employerSelected;
+  }
 
     render() {
-      const {declaration, folder, disabledHours,disabledDateEnd, employer, redirect } = this.state
-
+      const {declaration, folder,employerSelected, disabledHours,disabledDateEnd, employer, redirect, isEdit } = this.state
+     
       if (redirect) {
         return <Redirect to="/declarations/list" />;
       }
 
-      return (
-        <React.Fragment>
-        {this.state.folder.dateStart && (
-        <Wrapper>
-          <Title>Ajouter une déclaration</Title>
-          <form >
-            <div className="form-row">
-              <div className="form-group col-md-4">
-              <TextField name="annexe" 
-                select={true}
-                value={declaration.annexe} 
-                onChange={this.handleChange} 
-                label="Annexe"
-                variant="outlined"
-                required
-                InputLabelProps={{
-                  shrink: true
-                }}
-                 >
-                  {annexe.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                ))}
-              </TextField>
-              </div>
-              <div className="form-group col-md-4">
-              <TextField
-                label="Date début"
-                name="dateStart"
-                type="date"
-                required
-                variant="outlined"
-                onChange={this.handleChange}
-                InputProps={{
-                  inputProps: { 
-                      min: (moment(folder.dateStart!).format('Y-MM-DD')) 
-                  }
-                }}
-                InputLabelProps={{
-                  shrink: true
-                }}
-              />
-              </div>
-              <div className="form-group col-md-4">
-              <TextField
-                label="Date fin"
-                name="dateEnd"
-                type="date"
-                required
-                disabled={disabledDateEnd}
-                variant="outlined"
-                onChange={this.handleChange}
-                value={declaration.dateEnd ? declaration.dateEnd : ''} 
-                InputLabelProps={{
-                  shrink: true
-                }}
-              />
-              </div>
-             
-            </div>
-            <div className="form-row">
-              <div className="form-group col-md-6">
-              <Autocomplete
-                options={employer}
-                onChange={this.autocompleteChange}
-                freeSolo={true}
-                getOptionLabel={(option: any) => option.name}
-                renderInput={(params: any) => <TextField {...params} name="employer" 
-                value={declaration.employer} onChange={this.handleChange} label="Employeur"
-                variant="outlined"
-                InputLabelProps={{
-                  shrink: true
-                }}
-                required/>}
-              />
-              </div>
-              <div className="form-group col-md-6">
-              <TextField
-                label="Nom de l'événement"
-                name="label"
-                variant="outlined"
-                type="text"
-                onChange={this.handleChange}
-                value={declaration.label ? declaration.label : ''}
-                InputLabelProps={{
-                  shrink: true
-                }}
-              />
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-group col-md-4">
-              <TextField
-                  label="Salaire brut"
-                  name="grossSalary"
+      let render: any = (
+          <React.Fragment>
+          {folder.dateStart && (
+          <Wrapper>
+            <Title>{isEdit ? "Modifier une déclaration" : "Ajouter une déclaration"}</Title>
+            <form >
+              <div className="form-row">
+                <div className="form-group col-md-4">
+                <TextField name="annexe" 
+                  select={true}
+                  value={declaration.annexe ? declaration.annexe : '' } 
+                  onChange={this.handleChange} 
+                  label="Annexe"
                   variant="outlined"
-                  type="number"
-                  onChange={this.handleChange}
-                  value={declaration.grossSalary ? declaration.grossSalary : ''}
+                  required
                   InputLabelProps={{
                     shrink: true
                   }}
-                  InputProps={{
-                    inputProps: {
-                      min: 1
-                    }
-                  }}
-                />
-              </div>
-              <div className="form-group col-md-4">
+                   >
+                    {annexe.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                  ))}
+                </TextField>
+                </div>
+                <div className="form-group col-md-4">
                 <TextField
-                  label="Salaire net"
-                  name="netSalary"
+                  label="Date début"
+                  name="dateStart"
+                  type="date"
+                  required
+                  value={declaration.dateStart ? moment(declaration.dateStart).format('Y-MM-DD') : ''}
                   variant="outlined"
-                  type="number"
                   onChange={this.handleChange}
-                  value={declaration.netSalary ? declaration.netSalary : ''}
+                  InputProps={{
+                    inputProps: { 
+                        min: (moment(folder.dateStart!).format('Y-MM-DD')) 
+                    }
+                  }}
                   InputLabelProps={{
                     shrink: true
                   }}
-                  InputProps={{
-                    inputProps: {
-                      min: 1
-                    }
-                  }}
                 />
-              </div>
-              <div className="form-group col-md-4">
-              <TextField
-                  label="Nombre d'heures déclarées"
-                  name="nbhours"
+                </div>
+                <div className="form-group col-md-4">
+                <TextField
+                  label="Date fin"
+                  name="dateEnd"
+                  type="date"
+                  value={declaration.dateEnd ? moment(declaration.dateEnd).format('Y-MM-DD') : ''}
+                  required
+                  disabled={disabledDateEnd}
                   variant="outlined"
-                  type="number"
                   onChange={this.handleChange}
-                  value={declaration.nbhours ? declaration.nbhours : ''}
                   InputLabelProps={{
                     shrink: true
                   }}
-                  disabled={disabledHours}
-                  InputProps={{
-                    inputProps: {
-                      min: 1
-                    }
+                />
+                </div>
+               
+              </div>
+              <div className="form-row">
+                <div className="form-group col-md-6">
+                <Autocomplete
+                  options={employer}
+                  onChange={this.autocompleteChange}
+                  freeSolo={true}
+                  value={employerSelected ? employerSelected : null} 
+                  getOptionLabel={(option: any) => option.name}
+                  renderInput={(params: any) => 
+                  <TextField {...params} 
+                  name="employer" 
+                  onChange={this.handleChange} 
+                  label="Employeur"
+                  variant="outlined"
+                  InputLabelProps={{
+                    shrink: true
+                  }}
+                  required/>}
+                />
+                </div>
+                <div className="form-group col-md-6">
+                <TextField
+                  label="Nom de l'événement"
+                  name="label"
+                  variant="outlined"
+                  type="text"
+                  onChange={this.handleChange}
+                  value={declaration.label ? declaration.label : ''}
+                  InputLabelProps={{
+                    shrink: true
                   }}
                 />
+                </div>
               </div>
-            </div>
-            {this.state.error && <Error>Veuillez renseigner tous les champs obligatoires</Error> }
-              <CancelButton href={'/declarations/list'}>Annuler</CancelButton>
-              <Button onClick={this.handleSubmit}>Ajouter</Button>
-          </form>
-        </Wrapper>)
-        }
-         </React.Fragment>
-      );
+              <div className="form-row">
+                <div className="form-group col-md-4">
+                <TextField
+                    label="Salaire brut"
+                    name="grossSalary"
+                    variant="outlined"
+                    type="number"
+                    onChange={this.handleChange}
+                    value={declaration.grossSalary ? declaration.grossSalary : ''}
+                    InputLabelProps={{
+                      shrink: true
+                    }}
+                    InputProps={{
+                      inputProps: {
+                        min: 1
+                      }
+                    }}
+                  />
+                </div>
+                <div className="form-group col-md-4">
+                  <TextField
+                    label="Salaire net"
+                    name="netSalary"
+                    variant="outlined"
+                    type="number"
+                    onChange={this.handleChange}
+                    value={ declaration.netSalary ? declaration.netSalary : ''}
+                    InputLabelProps={{
+                      shrink: true
+                    }}
+                    InputProps={{
+                      inputProps: {
+                        min: 1
+                      }
+                    }}
+                  />
+                </div>
+                <div className="form-group col-md-4">
+                <TextField
+                    label="Nombre d'heures déclarées"
+                    name="nbhours"
+                    variant="outlined"
+                    type="number"
+                    onChange={this.handleChange}
+                    value={declaration.nbhours ? declaration.nbhours : ''}
+                    InputLabelProps={{
+                      shrink: true
+                    }}
+                    disabled={disabledHours}
+                    InputProps={{
+                      inputProps: {
+                        min: 1
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+              {this.state.error && <Error>Veuillez renseigner tous les champs obligatoires</Error> }
+                <CancelButton href={'/declarations/list'}>Annuler</CancelButton>
+                <Button onClick={this.handleSubmit}>{isEdit ? "Modifier" : "Ajouter"}</Button>
+            </form>
+          </Wrapper>)
+          }
+           </React.Fragment>
+        )
+
+      return ( <React.Fragment>{render}</React.Fragment>)
     }
   }
 

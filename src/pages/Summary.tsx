@@ -9,6 +9,7 @@ import api from '../api';
 import { IconButton } from '@material-ui/core';
 import DeleteIcon from '@material-ui/icons/Delete';
 import EditIcon from '@material-ui/icons/Edit';
+import { Redirect } from 'react-router-dom';
 
 const Title = styled.h2.attrs({
     className: 'title',
@@ -42,7 +43,8 @@ interface SummaryState {
     activeId: any[],
     totalMonthArray: any[],
     totalFolder: any,
-    folder: Folder
+    folder: Folder,
+    declarationUpdate: string | null
 }
 
 class Summary extends React.Component<SummaryProps,SummaryState> {
@@ -56,6 +58,7 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
             activeId: [],
             totalMonthArray: [],
             totalFolder: {},
+            declarationUpdate: null,
             folder: new Folder()
         };
 
@@ -101,7 +104,7 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
                 cell: (row: any) =>((row.rate) ? row.rate : 0) + ' €'
             },
               {
-                cell: () => <IconButton aria-label="edit">
+                cell: (row:any) => <IconButton aria-label="edit" onClick={()=>this.updateDeclaration(row)}>
                     <EditIcon />
                 </IconButton>,
                 ignoreRowClick: true,
@@ -119,8 +122,8 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
         ]
     }
 
-    deleteDeclaration(row:any){
-        api.deleteDeclarationById(row._id).then(()=>{
+    deleteDeclaration(declaration:any){
+        api.deleteDeclarationById(declaration._id).then(()=>{
             window.location.reload(false);
         })
     }
@@ -268,10 +271,19 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
         })
     }
 
+    updateDeclaration = (declaration: any)=>{
+        this.setState({declarationUpdate: declaration._id})
+      
+    }
+
     render() {
         moment.locale('fr');
-
-        const { declarations, monthArray, totalMonthArray, activeId, totalFolder, folder } = this.state
+        const { declarations, monthArray, totalMonthArray, activeId, totalFolder, folder, declarationUpdate } = this.state
+        
+        if(declarationUpdate!== null){
+            return <Redirect to={`/declarations/form/${declarationUpdate}`}/>
+        }
+        
         console.log('render -> declarations', declarations)
       
         let alloc: number = this.getAllocation();
