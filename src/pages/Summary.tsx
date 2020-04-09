@@ -1,15 +1,15 @@
 import React from 'react';
-import DataTable from 'react-data-table-component';
 import moment from 'moment';
 import styled from 'styled-components';
 import 'moment/locale/fr'
 import  Folder  from '../model/folder';
 import Declaration from '../model/declaration';
 import api from '../api';
-import { IconButton } from '@material-ui/core';
 import DeleteIcon from '@material-ui/icons/Delete';
 import EditIcon from '@material-ui/icons/Edit';
 import { Redirect } from 'react-router-dom';
+import MaterialTable from 'material-table'
+import {ArrowUpward} from '@material-ui/icons'
 
 const Title = styled.h2.attrs({
     className: 'title',
@@ -64,61 +64,38 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
 
         this.columns = [
             {
-                name: 'Date début',
-                selector: 'dateStart',
-                sortable: true,
-                cell: (row:any) => moment(row.dateStart).format('DD-MM-YYYY')
+                title: 'Date début',
+                field: 'dateStart',
+                render:  (row:any) => moment(row.dateStart).format('DD-MM-YYYY')
             },
             {
-                name: 'Date fin',
-                selector: 'dateEnd',
-                sortable: true,
-                cell: (row:any) => moment(row.dateEnd).format('DD-MM-YYYY')
+                title: 'Date fin',
+                field: 'dateEnd',
+                render: (row:any) => moment(row.dateEnd).format('DD-MM-YYYY')
             },
             {
-                name: 'Employeur',
-                selector: 'employer',
-                sortable: true
+                title: 'Employeur',
+                field: 'employer'
             },
             {
-                name: 'Nombre d\'heures',
-                selector: 'nbhours',
-                sortable: true
+                title: 'Nombre d\'heures',
+                field: 'nbhours'
             },
             {
-                name: 'Salaire net',
-                selector: 'netSalary',
-                sortable: true,
-                cell: (row: any) => row.netSalary+ ' €'
+                title: 'Salaire net',
+                field: 'netSalary',
+                render: (row: any) => row.netSalary+ ' €'
             },
             {
-                name: 'Salaire brut',
-                selector: 'grossSalary',
-                sortable: true,
-                cell: (row: any) => row.grossSalary+ ' €'
+                title: 'Salaire brut',
+                field: 'grossSalary',
+                render: (row: any) => row.grossSalary+ ' €'
             },
             {
-                name: 'Taux horaire brut',
-                selector: 'rate',
-                sortable: true,
-                cell: (row: any) =>((row.rate) ? row.rate : 0) + ' €'
-            },
-              {
-                cell: (row:any) => <IconButton aria-label="edit" onClick={()=>this.updateDeclaration(row)}>
-                    <EditIcon />
-                </IconButton>,
-                ignoreRowClick: true,
-                allowOverflow: true,
-                button: true,
-              },
-              {
-                cell: (row:any) => <IconButton aria-label="delete" onClick={()=>this.deleteDeclaration(row)}>
-                    <DeleteIcon />
-                </IconButton>,
-                ignoreRowClick: true,
-                allowOverflow: true,
-                button: true,
-              }
+                title: 'Taux horaire brut',
+                field: 'rate',
+                render: (row: any) =>((row.rate) ? row.rate : 0) + ' €'
+            }
         ]
     }
 
@@ -304,17 +281,38 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
                         </div>
                        
                     </div>
-                    <DataTable 
-                        className={( activeId.some(a => (a === index)) ? 'tableExpand' : 'tableCollapse')}
+                    <div className={( activeId.some(a => (a === index)) ? 'tableExpand' : 'tableCollapse')}>
+                    <MaterialTable 
+                        icons={{
+                            SortArrow: React.forwardRef((props, ref) => <ArrowUpward {...props} fontSize="small" ref={ref}/>)
+                        }}
                         key={index}
-                        highlightOnHover={true}
-                        striped={true}
                         columns={this.columns}
-                        noHeader={true}
                         data={obj}
+                        options={{
+                            filtering: false,
+                            actionsColumnIndex: -1,
+                            search: false,
+                            paging: false,
+                            showTextRowsSelected: false,
+                            showTitle: false,
+                            toolbar: false
+                          }}
+                        actions={[
+                            {
+                                icon:  () => <EditIcon fontSize="small"/>,
+                                onClick: (event, rowData) => this.updateDeclaration(rowData)
+                            },
+                            {
+                                icon: () => <DeleteIcon fontSize="small"/>,
+                                onClick: (event, rowData) => this.deleteDeclaration(rowData)
+                            }
+                        ]}
                         />
+                    </div>
                 </React.Fragment>
           )
+                        
           })
 
           let sjm = (totalFolder.grossSalary/(totalFolder.nbhours/8));

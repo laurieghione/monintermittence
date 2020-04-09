@@ -1,13 +1,14 @@
 
 .tableCollapse{
-  height: 0;
+  display: none;
 }
 
 .tableExpand{
-  height: 100%;
+  overflow-x: auto;
+  display: flex;
 }
 
- .rdt_Table{
+ .MuiTable-root{
   margin-top:10px;
   margin-bottom: 15px;
 }
