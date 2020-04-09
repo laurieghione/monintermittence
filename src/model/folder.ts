@@ -1,5 +1,5 @@
 export default class Folder{
-    id: string
+    _id: string
     name: string | null
     dateStart: Date | null
     dateEnd: Date | null
@@ -7,7 +7,7 @@ export default class Folder{
     user: string | null
   
     constructor(){
-        this.id = ''
+        this._id = ''
         this.name = ''
         this.dateStart = null
         this.dateEnd = null

@@ -159,7 +159,7 @@ export class DeclarationForm extends React.Component<DFProps & RouteProps, DFSta
   
     handleSubmit = (event : any) => {
       event.preventDefault();
-      let {declaration, employer, redirect, error } = this.state
+      let {declaration, employer, error } = this.state
 
       let formIsValid = this.handleValidation();
       let employerExist:any;
@@ -180,16 +180,17 @@ export class DeclarationForm extends React.Component<DFProps & RouteProps, DFSta
 
         if(this.state.isEdit){
           api.updateDeclarationById(declaration.id, declaration).then(() => {
-            window.alert(`La déclaration a bien été modifiée`);
-             redirect = true
+             window.alert(`La déclaration a bien été modifiée`);
+             this.setState({redirect: true});
           }).catch((error: any) => {
             console.error(error);
           });
         }else{
-          api.updateDeclarationById(declaration).then(() => {
+          api.insertDeclaration(declaration).then(() => {
             window.alert(`La déclaration a bien été ajoutée`);
-            redirect = true
+            this.setState({redirect: true});
           }).catch((error) => {
+            window.alert(error);
             console.error(error);
           });
         }
@@ -197,7 +198,7 @@ export class DeclarationForm extends React.Component<DFProps & RouteProps, DFSta
       {
         error = true
       }
-      this.setState({redirect, error});
+      this.setState({error});
     }
 
     getParams = async(): Promise<string> => {
@@ -264,7 +265,7 @@ export class DeclarationForm extends React.Component<DFProps & RouteProps, DFSta
           isEdit = (id ? true : false) 
            this.getActiveFolder().then((fold)=>{
             folder = fold
-            declaration.folder = fold.id
+            declaration.folder = fold._id
           })
           this.getEmployers().then((employers)=>{
             employer = employers
@@ -313,7 +314,8 @@ export class DeclarationForm extends React.Component<DFProps & RouteProps, DFSta
 
     render() {
       const {declaration, folder,employerSelected, disabledHours,disabledDateEnd, employer, redirect, isEdit } = this.state
-     
+     console.log('render')
+     console.log(redirect,'redirect')
       if (redirect) {
         return <Redirect to="/declarations/list" />;
       }
@@ -350,7 +352,8 @@ export class DeclarationForm extends React.Component<DFProps & RouteProps, DFSta
                   name="dateStart"
                   type="date"
                   required
-                  value={declaration.dateStart ? moment(declaration.dateStart).format('Y-MM-DD') : ''}
+                  value={ isEdit ? moment(declaration.dateStart!).format('Y-MM-DD') : 
+                  (declaration.dateStart ? declaration.dateStart : '' )}
                   variant="outlined"
                   onChange={this.handleChange}
                   InputProps={{
@@ -368,7 +371,8 @@ export class DeclarationForm extends React.Component<DFProps & RouteProps, DFSta
                   label="Date fin"
                   name="dateEnd"
                   type="date"
-                  value={declaration.dateEnd ? moment(declaration.dateEnd).format('Y-MM-DD') : ''}
+                  value={ isEdit ? moment(declaration.dateEnd!).format('Y-MM-DD') : 
+                  (declaration.dateEnd ? declaration.dateEnd : '' )}
                   required
                   disabled={disabledDateEnd}
                   variant="outlined"

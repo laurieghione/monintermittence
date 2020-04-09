@@ -84,7 +84,8 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
             },
             {
                 title: 'Nombre d\'heures',
-                field: 'nbhours'
+                field: 'nbhours',
+                render: (row: any) => (row.nbhours ? row.nbhours : 0 )
             },
             {
                 title: 'Salaire net',
@@ -121,7 +122,7 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
             b = ( indemJourn * ( 0.26 * nbHours ) ) / 507         
         } else {
             let diffSalary = salary - salaryMax;
-            let diffHours = nbHours - nbHoursMax;
+            let diffHours = (nbHours ?  nbHours - nbHoursMax : 0);
             a = ((indemJourn * ( txSalary * salaryMax ) + 0.05 * diffSalary ) / 5000)
             b = ( indemJourn * ( 0.26 * nbHoursMax ) + 0.08 * diffHours ) / 507
         }
@@ -196,12 +197,83 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
                     <div className="tags">
                     <Tag>Brut : {Math.round(totalMonthArray[index].grossSalary*100/100)+` €`}</Tag>
                     <Tag>Net : {Math.round(totalMonthArray[index].netSalary*100/100)+` €`}</Tag>
-                    <Tag>{totalMonthArray[index].nbhours+` h`}</Tag>
+                    <Tag>{totalMonthArray[index].nbhours ? totalMonthArray[index].nbhours : 0 +` h`}</Tag>
                     </div>
                 </div>
             
             </div>
             </React.Fragment>)
+    }
+
+    getDeclarationByMonth = async (declarations: any): Promise<any> => {
+        let monthArray: any[] = [];
+
+        return new Promise((resolve) => {
+            declarations.map((d: Declaration)=>{
+                let month: any = (moment(d.dateStart!).format('MM'));
+                let year: any = (moment(d.dateStart!).format('Y'));
+                let index = year + month;
+                if(!monthArray[index]){
+                    monthArray[index] = [];
+                }
+                let rate = (d.nbhours && d.grossSalary) ? (d.grossSalary/d.nbhours) : 0 ; 
+                d.rate = (Math.round(rate*100)/100);
+                monthArray[index].push(d);
+            })
+            resolve(monthArray)
+        })
+    }
+
+    getTotalByMonth = (monthsArray: any[]) :any =>{
+        let totalMonthArray: any = [];
+
+        monthsArray.map((monthdata: any, index: number )=>{
+            if(!totalMonthArray[index]){
+                totalMonthArray[index] = {
+                    grossSalary : 0,
+                    nbhours : 0,
+                    netSalary : 0
+                };
+            }
+            monthdata.map((declaration: any) => {
+                console.log(declaration)
+                totalMonthArray[index].grossSalary += declaration.grossSalary;
+                totalMonthArray[index].nbhours += (declaration.nbhours) ? declaration.nbhours : 0;
+                totalMonthArray[index].netSalary += declaration.netSalary;
+            })
+        })
+        return totalMonthArray;
+
+    }
+
+    getTotalByFolder = (totalMonthArray: any[]) :any =>{
+        let totalFolder={
+            grossSalary: 0,
+            nbhours: 0,
+            netSalary: 0,
+            rate: 0, 
+            grossSalary8: 0,
+            grossSalary10: 0,
+            nbhours8: 0,
+            nbhours10: 0}
+
+        totalMonthArray.map((totalMonthdata: any )=>{
+            totalFolder.netSalary += totalMonthdata.netSalary;
+
+            if(Number(totalMonthdata.annexe) === 8){
+                totalFolder.grossSalary8 += totalMonthdata.grossSalary;
+                totalFolder.nbhours8 += totalMonthdata.nbhours;
+            } else {
+                totalFolder.grossSalary10 += totalMonthdata.grossSalary;
+                totalFolder.nbhours10 += totalMonthdata.nbhours;
+            }
+        })
+
+        totalFolder.grossSalary = totalFolder.grossSalary8 +  totalFolder.grossSalary10;
+        totalFolder.nbhours = totalFolder.nbhours8 +  totalFolder.nbhours10;  
+        totalFolder.rate = (totalFolder.grossSalary / totalFolder.nbhours);
+
+        return totalFolder;
     }
 
     componentDidMount = () => {
@@ -210,87 +282,41 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
         console.log("componentDidMount")
         api.getActiveFolder().then((folder: any) => {
             if(folder.data.data){
-                api.getDeclarationsByFolder(folder.data.data._id).then((declarations: any) => {
-                    let monthArray: any[] = [];
-                    let totalMonthArray: any[] = [];
-                    let totalFolder={
-                        grossSalary: 0,
-                        nbhours: 0,
-                        netSalary: 0,
-                        rate: 0, 
-                        grossSalary8: 0,
-                        grossSalary10: 0,
-                        nbhours8: 0,
-                        nbhours10: 0}
-        
-                    declarations.data.data.map((d: Declaration)=>{
-                        let month: any = (moment(d.dateStart!).format('MM'));
-                        let year: any = (moment(d.dateStart!).format('Y'));
-                        let index = year+month;
-                        if(!monthArray[index]){
-                            monthArray[index] = [];
-                            totalMonthArray[index] = {
-                                grossSalary: 0,
-                                nbhours: 0,
-                                netSalary: 0
-                            }
-                        }
-                        // (Salaire brut total / Nb heures par jour )
-                        let rate = (d.grossSalary!/d.nbhours!); 
-                        d.rate = (Math.round(rate*100)/100);
-        
-                        totalMonthArray[index].grossSalary += d.grossSalary;
-                        totalMonthArray[index].nbhours += d.nbhours;
-                        totalMonthArray[index].netSalary += d.netSalary;
-                        totalFolder.grossSalary += d.grossSalary;
-                        totalFolder.nbhours += d.nbhours;
-                        totalFolder.netSalary += d.netSalary;
-                    
-                        if(Number(d.annexe) === 8){
-                            totalFolder.grossSalary8 += d.grossSalary;
-                            totalFolder.nbhours8 += d.nbhours;
-                        } else {
-                            totalFolder.grossSalary10 += d.grossSalary;
-                            totalFolder.nbhours10 += d.nbhours;
-                        }
-        
-                        monthArray[index].push(d);
-
-                        return monthArray;
+                api.getDeclarationsByFolder(folder.data.data._id).then((declarations: any)=>{
+                    this.getDeclarationByMonth(declarations.data.data)
+                    .then((monthArray :any)=>{
+                        let totalMonthArray: any[] = this.getTotalByMonth(monthArray);
+                        let totalFolder: any = this.getTotalByFolder(totalMonthArray);
+                        let alloc: number = this.getAllocation(totalFolder);
+          
+                        let tableRender = monthArray.map((obj: any, index: number) => {
+                            return ( this.getTableHeader(index, totalMonthArray) )           
+                            })
+                
+                            this.setState({
+                            declarations: declarations.data.data,
+                            monthArray,
+                            alloc,
+                            totalMonthArray,
+                            totalFolder,
+                            isLoading:false,
+                            tableRender,
+                            folder: folder.data.data
+                        })
                     })
-        
-                    totalFolder.rate = (totalFolder.grossSalary / totalFolder.nbhours);
-
-                    let alloc: number = this.getAllocation(totalFolder);
-
-                    let tableRender = monthArray.map((obj, index) => {
-                        return ( this.getTableHeader(index, totalMonthArray) )           
-                      })
-            
-                      this.setState({
-                        declarations: declarations.data.data,
-                        monthArray,
-                        alloc,
-                        totalMonthArray,
-                        totalFolder,
-                        isLoading:false,
-                        tableRender,
-                        folder: folder.data.data
-                    })
-
+      
                 })
+            
             }
         })
     }
 
     componentDidUpdate = (prevProps: any, prevState: any)=>{
-
+        console.log('update')
         if(prevState.activeId != this.state.activeId){
             const { totalMonthArray, monthArray } = this.state
             
             let tableRender = monthArray.map((obj, index) => {
-                let month = moment(index.toString().substring(4)).format('MMMM').toUpperCase()
-                let year = index.toString().substring(0,4)
                 return (
                     <React.Fragment key={index}>
                         {this.getTableHeader(index, totalMonthArray)}
@@ -331,6 +357,32 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
               this.setState({tableRender})
         }
 
+        if(prevState.declarations.length != this.state.declarations.length){
+            api.getDeclarationsByFolder(this.state.folder._id).then((declarations: any)=>{
+                this.getDeclarationByMonth(declarations.data.data)
+                .then((monthArray :any)=>{
+                    let totalMonthArray: any[] = this.getTotalByMonth(monthArray);
+                    let totalFolder: any = this.getTotalByFolder(totalMonthArray);
+                    let alloc: number = this.getAllocation(totalFolder);
+      
+                    let tableRender = monthArray.map((obj: any, index: number) => {
+                        return ( this.getTableHeader(index, totalMonthArray) )           
+                        })
+            
+                        this.setState({
+                        declarations: declarations.data.data,
+                        monthArray,
+                        alloc,
+                        totalMonthArray,
+                        totalFolder,
+                        isLoading:false,
+                        tableRender
+                    })
+                })
+  
+            })
+        }
+
     }
 
     updateDeclaration = (declaration: any)=>{
@@ -354,7 +406,6 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
         }
 
         console.log('render -> declarations', declarations)
-      
 
         let sjm = Math.round((totalFolder.grossSalary/(totalFolder.nbhours/8))*100)/100;
 
