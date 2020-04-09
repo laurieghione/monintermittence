@@ -5,11 +5,10 @@ import 'moment/locale/fr'
 import  Folder  from '../model/folder';
 import Declaration from '../model/declaration';
 import api from '../api';
-import DeleteIcon from '@material-ui/icons/Delete';
-import EditIcon from '@material-ui/icons/Edit';
 import { Redirect } from 'react-router-dom';
 import MaterialTable from 'material-table'
-import {ArrowUpward} from '@material-ui/icons'
+import {ArrowUpward, Edit, Delete } from '@material-ui/icons'
+import CircularProgress from '@material-ui/core/CircularProgress';
 
 const Title = styled.h2.attrs({
     className: 'title',
@@ -42,8 +41,11 @@ interface SummaryState {
     monthArray: any[],
     activeId: any[],
     totalMonthArray: any[],
+    isLoading: boolean,
     totalFolder: any,
     folder: Folder,
+    tableRender: any,
+    alloc: number,
     declarationUpdate: string | null
 }
 
@@ -56,6 +58,9 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
             declarations: [],
             monthArray: [],
             activeId: [],
+            isLoading: true,
+            alloc: 0,
+            tableRender: null,
             totalMonthArray: [],
             totalFolder: {},
             declarationUpdate: null,
@@ -129,8 +134,7 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
       return alloc;
     }
 
-    getAllocation() : number {
-        const { totalFolder } = this.state
+    getAllocation(totalFolder: any) : number {
         let maxAllocJ: number = 149.78;
         let alloc10 = 0;
         let alloc8 = 0;
@@ -163,7 +167,7 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
 
     toggleClick = (ev: any) =>{
         let id = Number(ev.currentTarget.id);
-        let actives = this.state.activeId;
+        let actives = this.state.activeId.slice();
         let find: boolean = false;
         if(actives.length > 0){
             actives.map((active: Number )=>{
@@ -181,11 +185,31 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
         this.setState({activeId: actives});
     }
 
+
+    getTableHeader = (index: number, totalMonthArray: any[]) =>{
+        let month = moment(index.toString().substring(4)).format('MMMM').toUpperCase()
+        let year = index.toString().substring(0,4)
+        return(<React.Fragment key={index}>
+            <div className="month" id={index.toString()} onClick={this.toggleClick}>
+                <div className="monthHeader">
+                    <Month>{month+' '+ year}</Month>
+                    <div className="tags">
+                    <Tag>Brut : {Math.round(totalMonthArray[index].grossSalary*100/100)+` €`}</Tag>
+                    <Tag>Net : {Math.round(totalMonthArray[index].netSalary*100/100)+` €`}</Tag>
+                    <Tag>{totalMonthArray[index].nbhours+` h`}</Tag>
+                    </div>
+                </div>
+            
+            </div>
+            </React.Fragment>)
+    }
+
     componentDidMount = () => {
         // get active folder
+        moment.locale('fr');
+        console.log("componentDidMount")
         api.getActiveFolder().then((folder: any) => {
             if(folder.data.data){
-                this.setState({folder: folder.data.data })
                 api.getDeclarationsByFolder(folder.data.data._id).then((declarations: any) => {
                     let monthArray: any[] = [];
                     let totalMonthArray: any[] = [];
@@ -237,15 +261,76 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
         
                     totalFolder.rate = (totalFolder.grossSalary / totalFolder.nbhours);
 
-                    this.setState({
+                    let alloc: number = this.getAllocation(totalFolder);
+
+                    let tableRender = monthArray.map((obj, index) => {
+                        return ( this.getTableHeader(index, totalMonthArray) )           
+                      })
+            
+                      this.setState({
                         declarations: declarations.data.data,
                         monthArray,
+                        alloc,
                         totalMonthArray,
-                        totalFolder
+                        totalFolder,
+                        isLoading:false,
+                        tableRender,
+                        folder: folder.data.data
                     })
+
                 })
             }
         })
+    }
+
+    componentDidUpdate = (prevProps: any, prevState: any)=>{
+
+        if(prevState.activeId != this.state.activeId){
+            const { totalMonthArray, monthArray } = this.state
+            
+            let tableRender = monthArray.map((obj, index) => {
+                let month = moment(index.toString().substring(4)).format('MMMM').toUpperCase()
+                let year = index.toString().substring(0,4)
+                return (
+                    <React.Fragment key={index}>
+                        {this.getTableHeader(index, totalMonthArray)}
+                        <div className={( this.state.activeId.some(a => (a === index)) ? 'tableExpand' : 'tableCollapse')}>
+                        { this.state.activeId.some(a => (a === index)) && (
+                            <MaterialTable 
+                                icons={{
+                                    SortArrow: React.forwardRef((props, ref) => <ArrowUpward {...props} fontSize="small" ref={ref}/>)
+                                }}
+                                key={index}
+                                columns={this.columns}
+                                data={obj}
+                                options={{
+                                    filtering: false,
+                                    actionsColumnIndex: -1,
+                                    search: false,
+                                    paging: false,
+                                    showTextRowsSelected: false,
+                                    showTitle: false,
+                                    toolbar: false
+                                }}
+                                actions={[
+                                    {
+                                        icon:  () => <Edit fontSize="small"/>,
+                                        onClick: (event, rowData) => this.updateDeclaration(rowData)
+                                    },
+                                    {
+                                        icon: () => <Delete fontSize="small"/>,
+                                        onClick: (event, rowData) => this.deleteDeclaration(rowData)
+                                    }
+                                ]}
+                                />
+                        )}
+                        </div>
+                    </React.Fragment>
+              )          
+              })
+              this.setState({tableRender})
+        }
+
     }
 
     updateDeclaration = (declaration: any)=>{
@@ -254,68 +339,24 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
     }
 
     render() {
-        moment.locale('fr');
-        const { declarations, monthArray, totalMonthArray, activeId, totalFolder, folder, declarationUpdate } = this.state
+
+        if(this.state.isLoading){
+            return (
+            <div className="loader">
+                <CircularProgress size={70} />
+            </div>)
+        }     
+
+        const { declarations, tableRender, alloc, totalFolder, folder, declarationUpdate } = this.state
         
         if(declarationUpdate!== null){
             return <Redirect to={`/declarations/form/${declarationUpdate}`}/>
         }
-        
+
         console.log('render -> declarations', declarations)
       
-        let alloc: number = this.getAllocation();
 
-        let monthTable = monthArray.map((obj, index) => {
-            let month = moment(index.toString().substring(4)).format('MMMM').toUpperCase()
-            let year = index.toString().substring(0,4)
-            return (
-                <React.Fragment key={index}>
-                    <div className="month" id={index.toString()} onClick={this.toggleClick}>
-                        <div className="monthHeader">
-                            <Month>{month+' '+ year}</Month>
-                            <div className="tags">
-                            <Tag>Brut : {Math.round(totalMonthArray[index].grossSalary*100/100)+` €`}</Tag>
-                            <Tag>Net : {Math.round(totalMonthArray[index].netSalary*100/100)+` €`}</Tag>
-                            <Tag>{totalMonthArray[index].nbhours+` h`}</Tag>
-                            </div>
-                        </div>
-                       
-                    </div>
-                    <div className={( activeId.some(a => (a === index)) ? 'tableExpand' : 'tableCollapse')}>
-                    <MaterialTable 
-                        icons={{
-                            SortArrow: React.forwardRef((props, ref) => <ArrowUpward {...props} fontSize="small" ref={ref}/>)
-                        }}
-                        key={index}
-                        columns={this.columns}
-                        data={obj}
-                        options={{
-                            filtering: false,
-                            actionsColumnIndex: -1,
-                            search: false,
-                            paging: false,
-                            showTextRowsSelected: false,
-                            showTitle: false,
-                            toolbar: false
-                          }}
-                        actions={[
-                            {
-                                icon:  () => <EditIcon fontSize="small"/>,
-                                onClick: (event, rowData) => this.updateDeclaration(rowData)
-                            },
-                            {
-                                icon: () => <DeleteIcon fontSize="small"/>,
-                                onClick: (event, rowData) => this.deleteDeclaration(rowData)
-                            }
-                        ]}
-                        />
-                    </div>
-                </React.Fragment>
-          )
-                        
-          })
-
-          let sjm = (totalFolder.grossSalary/(totalFolder.nbhours/8));
+        let sjm = Math.round((totalFolder.grossSalary/(totalFolder.nbhours/8))*100)/100;
 
         return (
             <Wrapper>
@@ -326,11 +367,11 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
                      { alloc !==0 && 
                     
                         <div className="tags">
-                        <Tagheaders>SJM : { (Math.round(sjm*100))/100 +`  €`}</Tagheaders>
+                        <Tagheaders>SJM : { sjm +`  €`}</Tagheaders>
                         <Tagheaders>AJ : {alloc+`  €`}</Tagheaders>
                         <Tagheaders>Brut : {Math.round(totalFolder.grossSalary*100)/100 +` €`}</Tagheaders>
                         <Tagheaders>Net : {Math.round(totalFolder.netSalary*100)/100+` €`}</Tagheaders>
-                        <Tagheaders>{totalFolder.nbhours+` h`}</Tagheaders>
+                        <Tagheaders>{totalFolder.nbhours + ` h`}</Tagheaders>
                         </div>
                      }
                     </div>
@@ -338,7 +379,7 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
                     <p>depuis le {(moment(folder.dateStart).format('DD/MM/Y'))}</p>
 
                     </div>
-                    { declarations.length > 0 && monthTable }
+                    { declarations.length > 0 && tableRender }
                  </React.Fragment>)}
             </Wrapper>
         )

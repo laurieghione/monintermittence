@@ -300,7 +300,7 @@ export class DeclarationForm extends React.Component<DFProps & RouteProps, DFSta
               })
              })
           }
-        }
+    }
 
     getEmployerDeclarationUpdate = (employers :any, declaration:any): Declaration => {     
       let employerSelected = this.state.employerSelected

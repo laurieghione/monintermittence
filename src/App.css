@@ -32,6 +32,13 @@
   width: 100%;
 }
 
+.loader{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 15%;
+}
+
 .month{
   width:100%;
   box-shadow: 0 4px 12px 0 rgba(119,153,166,0.5);
