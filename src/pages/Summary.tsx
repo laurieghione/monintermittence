@@ -7,8 +7,12 @@ import Declaration from '../model/declaration';
 import api from '../api';
 import { Redirect } from 'react-router-dom';
 import MaterialTable from 'material-table'
-import {ArrowUpward, Edit, Delete } from '@material-ui/icons'
+import {ArrowUpward, Edit, Delete, Close } from '@material-ui/icons'
 import CircularProgress from '@material-ui/core/CircularProgress';
+import IconButton from '@material-ui/core/IconButton';
+import Modal from '@material-ui/core/Modal';
+import { Button } from '@material-ui/core';
+import CustomModal from '../components/CustomModal'
 
 const Title = styled.h2.attrs({
     className: 'title',
@@ -42,6 +46,7 @@ interface SummaryState {
     activeId: any[],
     totalMonthArray: any[],
     isLoading: boolean,
+    openModalCloseFolder: boolean,
     totalFolder: any,
     folder: Folder,
     tableRender: any,
@@ -60,6 +65,7 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
             activeId: [],
             isLoading: true,
             alloc: 0,
+            openModalCloseFolder: false,
             tableRender: null,
             totalMonthArray: [],
             totalFolder: {},
@@ -186,7 +192,6 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
         this.setState({activeId: actives});
     }
 
-
     getTableHeader = (index: number, totalMonthArray: any[]) =>{
         let month = moment(index.toString().substring(4)).format('MMMM').toUpperCase()
         let year = index.toString().substring(0,4)
@@ -197,7 +202,7 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
                     <div className="tags">
                     <Tag>Brut : {Math.round(totalMonthArray[index].grossSalary*100/100)+` €`}</Tag>
                     <Tag>Net : {Math.round(totalMonthArray[index].netSalary*100/100)+` €`}</Tag>
-                    <Tag>{totalMonthArray[index].nbhours ? totalMonthArray[index].nbhours : 0 +` h`}</Tag>
+                    <Tag>{(totalMonthArray[index].nbhours ? totalMonthArray[index].nbhours : 0) +` h`}</Tag>
                     </div>
                 </div>
             
@@ -236,7 +241,6 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
                 };
             }
             monthdata.map((declaration: any) => {
-                console.log(declaration)
                 totalMonthArray[index].grossSalary += declaration.grossSalary;
                 totalMonthArray[index].nbhours += (declaration.nbhours) ? declaration.nbhours : 0;
                 totalMonthArray[index].netSalary += declaration.netSalary;
@@ -390,6 +394,15 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
       
     }
 
+    handleOpen=()=>{
+        this.setState({openModalCloseFolder: true})
+    }
+
+    handleClose=()=>{
+        this.setState({openModalCloseFolder: false})
+    }
+
+
     render() {
 
         if(this.state.isLoading){
@@ -399,7 +412,8 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
             </div>)
         }     
 
-        const { declarations, tableRender, alloc, totalFolder, folder, declarationUpdate } = this.state
+        const { declarations, tableRender, alloc, openModalCloseFolder,
+             totalFolder, folder, declarationUpdate } = this.state
         
         if(declarationUpdate!== null){
             return <Redirect to={`/declarations/form/${declarationUpdate}`}/>
@@ -408,6 +422,8 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
         console.log('render -> declarations', declarations)
 
         let sjm = Math.round((totalFolder.grossSalary/(totalFolder.nbhours/8))*100)/100;
+
+        let modalBody = "Etes vous sur de vouloir clôturer le dossier en cours ?"
 
         return (
             <Wrapper>
@@ -427,9 +443,11 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
                      }
                     </div>
                     <div className="buttonContainer">
-                    <p>depuis le {(moment(folder.dateStart).format('DD/MM/Y'))}</p>
-
+                        <p>depuis le {(moment(folder.dateStart).format('DD/MM/Y'))}</p>
+                        <IconButton onClick={this.handleOpen} ><Close /></IconButton>
                     </div>
+                    <CustomModal title="Clôturer le dossier" open={openModalCloseFolder} 
+                    handleClose={this.handleClose} buttonSubmit="Clôturer" body={modalBody}/>
                     { declarations.length > 0 && tableRender }
                  </React.Fragment>)}
             </Wrapper>

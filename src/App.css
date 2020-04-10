@@ -53,6 +53,7 @@
 .monthHeader, .folderHeader{
   display: flex;
   justify-content: space-between;
+
 }
 
 .folderHeader{
@@ -64,3 +65,51 @@
   transition: opacity 0.5s ease;
   opacity: 0.8;
 }
+
+.buttonContainer{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/**MODAL**/
+
+.customModal{
+  position: absolute;
+  width: 400px;
+  background-color: white;
+  border-radius: .3rem;
+  box-shadow: 0 4px 12px 0 rgba(119,153,166,0.5);
+  padding: 25px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(0,0,0,.2);
+  outline : 0;
+  pointer-events: auto;
+}
+
+.modalHeader{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.modalFooter{
+  margin-top: 40px;
+  display: flex;
+  justify-content: space-around;
+}
+
+/** RESPONSIVE **/
+/* Small devices (landscape phones, less than 768px)*/
+@media (max-width: 767.98px){
+  .monthHeader, .folderHeader{
+  flex-direction: column;
+}
+
+.tag{
+    padding: 5px 9px 5px 9px;
+    font-size: 11px;
+    margin:3px;  
+}}
