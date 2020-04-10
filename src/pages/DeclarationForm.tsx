@@ -10,6 +10,7 @@ import Autocomplete from '@material-ui/lab/Autocomplete';
 import { TextField, MenuItem} from '@material-ui/core';
 import Employer from '../model/employer';
 import { RouteProps } from 'react-router';
+import { Button } from '@material-ui/core';
 
 const Title = styled.h2.attrs({
     className: 'h2',
@@ -24,18 +25,6 @@ const Wrapper = styled.div.attrs({
 const Error = styled.p.attrs({
 })`
   color: red;font-size:12px;
-`
-
-const Button = styled.button.attrs({
-    className: `btn btn-primary`,
-})`
-    margin: 15px 15px 15px 5px;
-`
-
-const CancelButton = styled.a.attrs({
-    className: `btn btn-secondary`,
-})`
-    margin: 15px 15px 15px 5px;
 `
 
 interface DFProps  {
@@ -226,7 +215,7 @@ export class DeclarationForm extends React.Component<DFProps & RouteProps, DFSta
       })
     }
 
-    getActiveFolder = async() : Promise<Folder> =>{
+    getActiveFolder = async() : Promise<any> =>{
       return new Promise((resolve, reject) => {
         console.log("get active folder")
         api.getActiveFolder().then(res => {
@@ -259,16 +248,18 @@ export class DeclarationForm extends React.Component<DFProps & RouteProps, DFSta
 
     componentDidMount = async () =>{
       let {declaration, folder, employer, employerSelected, isEdit } = this.state
-      console.log('componentmount')
+      console.log('componentmount declaration form')
       await this.getParams().then(
         (id: any) => {
           isEdit = (id ? true : false) 
            this.getActiveFolder().then((fold)=>{
-            folder = fold
-            declaration.folder = fold._id
+            folder.id = fold._id
+            folder.active = fold.active
+            declaration.folder = folder.id
           })
           this.getEmployers().then((employers)=>{
             employer = employers
+            console.log('getEmployers')
             this.getDeclaration(id).then((decla)=>{
               if(isEdit){
                 declaration = decla
@@ -292,14 +283,17 @@ export class DeclarationForm extends React.Component<DFProps & RouteProps, DFSta
           (id: string) => {
             isEdit = (id ? true : false) 
            
+            if(isEdit){
               this.getDeclaration(id).then((decla)=>{
-                if(isEdit){
+                
                   declaration = decla
                   employerSelected = this.getEmployerDeclarationUpdate(employer, decla)  
-                }
                 this.setState({ isEdit, declaration, employerSelected });          
               })
-             })
+            }else{
+              this.setState({ isEdit});  
+            }
+           })
           }
     }
 
@@ -322,7 +316,7 @@ export class DeclarationForm extends React.Component<DFProps & RouteProps, DFSta
 
       let render: any = (
           <React.Fragment>
-          {folder.dateStart && (
+          {folder.active && (
           <Wrapper>
             <Title>{isEdit ? "Modifier une déclaration" : "Ajouter une déclaration"}</Title>
             <form >
@@ -476,8 +470,10 @@ export class DeclarationForm extends React.Component<DFProps & RouteProps, DFSta
                 </div>
               </div>
               {this.state.error && <Error>Veuillez renseigner tous les champs obligatoires</Error> }
-                <CancelButton href={'/declarations/list'}>Annuler</CancelButton>
-                <Button onClick={this.handleSubmit}>{isEdit ? "Modifier" : "Ajouter"}</Button>
+              <div className="footerForm">
+                <Button variant="contained" href={'/declarations/list'}>Annuler</Button>
+                <Button variant="contained" color="primary" onClick={this.handleSubmit}>{isEdit ? "Modifier" : "Ajouter"}</Button>
+              </div>
             </form>
           </Wrapper>)
           }

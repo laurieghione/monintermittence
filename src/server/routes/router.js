@@ -17,5 +17,6 @@ router.post('/employer', EmployerControl.createEmployer)
 router.get('/employer', EmployerControl.getEmployers)
 router.get('/folder', FolderControl.getFolderActive)
 router.put('/declaration/:id', DeclarationControl.updateDeclaration)
+router.put('/folder/:id', FolderControl.updateFolder)
 
 module.exports = router

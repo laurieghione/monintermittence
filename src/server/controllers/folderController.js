@@ -47,7 +47,47 @@ const getFolderActive = async (req,res ) => {
     }).catch((err) => console.log(err))
 }
 
+const updateFolder = async (req, res) => {
+    const body = req.body
+
+    if (!body) {
+        return res.status(400).json({
+            success: false,
+            error: 'You must provide a body to update',
+        })
+    }
+
+    FolderModel.findOne({ _id: req.params.id }, (err, folder) => {
+        if (err) {
+            return res.status(404).json({
+                err,
+                message: 'Folder not found!',
+            })
+        }
+        folder.name = body.name
+        folder.dateStart = body.dateStart
+        folder.dateEnd = body.dateEnd
+        folder.active = body.active
+        folder
+            .save()
+            .then(() => {
+                return res.status(200).json({
+                    success: true,
+                    id: folder._id,
+                    message: 'Folder updated!',
+                })
+            })
+            .catch(error => {
+                return res.status(404).json({
+                    error,
+                    message: 'Folder not updated!',
+                })
+            })
+    })
+}
+
 module.exports = {
     createFolder,
-    getFolderActive
+    getFolderActive,
+    updateFolder
 }

@@ -10,7 +10,7 @@ class Links extends React.Component {
     render() {
         return (
             <React.Fragment>
-                <Link to="/" className="navbar-brand">
+                <Link to="/declarations/list" className="navbar-brand">
                     Mon intermittence
                 </Link>
                 <div className="collpase navbar-collapse">
@@ -23,11 +23,6 @@ class Links extends React.Component {
                         <Item>
                             <Link to="/declarations/form" className="nav-link">
                                 Ajouter déclaration
-                            </Link>
-                        </Item>
-                        <Item>
-                            <Link to="/folder/form" className="nav-link">
-                                Ajouter Dossier
                             </Link>
                         </Item>
                     </div>

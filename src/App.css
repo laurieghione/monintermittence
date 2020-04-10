@@ -28,7 +28,7 @@
   cursor:pointer;
 }
 
-.MuiTextField-root, .MuiAutocomplete-root{
+.MuiTextField-root, .MuiAutocomplete-root, .MuiInputBase-root{
   width: 100%;
 }
 
@@ -72,6 +72,14 @@
   align-items: center;
 }
 
+.warning{
+  display: flex;
+  justify-content: center;
+  margin-top: 20%;
+  flex-direction: column;
+  align-items: center;
+}
+
 /**MODAL**/
 
 .customModal{
@@ -100,6 +108,13 @@
   display: flex;
   justify-content: space-around;
 }
+
+/** FORM **/
+
+.footerForm a{
+  margin-right:10px
+}
+
 
 /** RESPONSIVE **/
 /* Small devices (landscape phones, less than 768px)*/

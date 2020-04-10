@@ -6,15 +6,15 @@ import { Close } from '@material-ui/icons'
 interface CustomModalProps {
     open: boolean,
     title: string,
+    handleSubmit : ()=> void,
     handleClose : ()=> void,
     buttonSubmit: string,
-    body: string
-
+    body: any
 }
 
 class CustomModal extends React.Component<CustomModalProps> {
     render() {
-        const {open, title, handleClose, body, buttonSubmit} = this.props
+        const {open, title, handleClose, body, buttonSubmit, handleSubmit} = this.props
 
         return (
             <Modal
@@ -33,7 +33,7 @@ class CustomModal extends React.Component<CustomModalProps> {
             </p>
             <div className="modalFooter">
                 <Button variant="contained" onClick={handleClose}>Annuler</Button>
-                <Button variant="contained" color="primary">{buttonSubmit}</Button>
+                <Button variant="contained" color="primary" onClick={handleSubmit}>{buttonSubmit}</Button>
             </div>
             </div>
         </Modal>

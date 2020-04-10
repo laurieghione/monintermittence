@@ -10,9 +10,9 @@ import MaterialTable from 'material-table'
 import {ArrowUpward, Edit, Delete, Close } from '@material-ui/icons'
 import CircularProgress from '@material-ui/core/CircularProgress';
 import IconButton from '@material-ui/core/IconButton';
-import Modal from '@material-ui/core/Modal';
 import { Button } from '@material-ui/core';
 import CustomModal from '../components/CustomModal'
+import { TextField } from '@material-ui/core';
 
 const Title = styled.h2.attrs({
     className: 'title',
@@ -47,8 +47,9 @@ interface SummaryState {
     totalMonthArray: any[],
     isLoading: boolean,
     openModalCloseFolder: boolean,
+    openModalAddFolder: boolean,
     totalFolder: any,
-    folder: Folder,
+    folder: any,
     tableRender: any,
     alloc: number,
     declarationUpdate: string | null
@@ -66,6 +67,7 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
             isLoading: true,
             alloc: 0,
             openModalCloseFolder: false,
+            openModalAddFolder: false,
             tableRender: null,
             totalMonthArray: [],
             totalFolder: {},
@@ -312,12 +314,17 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
                 })
             
             }
+        }).catch(error => {
+            this.setState({isLoading:false})
         })
     }
 
     componentDidUpdate = (prevProps: any, prevState: any)=>{
         console.log('update')
-        if(prevState.activeId != this.state.activeId){
+
+        const {activeId, declarations, folder} = this.state
+
+        if(prevState.activeId != activeId){
             const { totalMonthArray, monthArray } = this.state
             
             let tableRender = monthArray.map((obj, index) => {
@@ -360,8 +367,7 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
               })
               this.setState({tableRender})
         }
-
-        if(prevState.declarations.length != this.state.declarations.length){
+        else if(prevState.declarations.length !== declarations.length){
             api.getDeclarationsByFolder(this.state.folder._id).then((declarations: any)=>{
                 this.getDeclarationByMonth(declarations.data.data)
                 .then((monthArray :any)=>{
@@ -386,7 +392,9 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
   
             })
         }
-
+        else if (prevState.folder.active !== folder.active){
+                this.setState({declarations: [] }) 
+        }
     }
 
     updateDeclaration = (declaration: any)=>{
@@ -394,12 +402,60 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
       
     }
 
-    handleOpen=()=>{
+    openModalClose=()=>{
         this.setState({openModalCloseFolder: true})
     }
+    openModalAdd=()=>{
+        this.setState({openModalAddFolder: true})
+    }
 
-    handleClose=()=>{
+    closeModalClose=()=>{
         this.setState({openModalCloseFolder: false})
+    }
+
+    closeModalAdd=()=>{
+        this.setState({openModalAddFolder: false})
+    }
+
+    closeFolder=()=>{
+        let {folder} = this.state
+        console.log(folder)
+        let newFolder = new Folder()
+        newFolder.active = false
+        newFolder.dateEnd = new Date()
+        newFolder.id = folder._id
+        newFolder.user = folder.user
+        newFolder.dateStart = folder.dateStart
+        newFolder.name = moment(newFolder.dateStart!).format('DD-MM-YYYY') + 
+        ' / ' + moment(newFolder.dateEnd).format('DD-MM-YYYY')
+       
+        api.updateFolderById(newFolder.id, newFolder).then(()=>{
+            this.setState({folder: newFolder, openModalCloseFolder: false})
+        })
+    }
+
+    addFolder= () =>{
+        let folder = this.state.folder;
+        let newFolder:any
+        folder.active = true
+        //TODO: add real user
+        folder.user = '5e86360d56dc0a72648fede2';
+        api.insertFolder(newFolder).then(() => {
+            window.alert(`Folder inserted successfully`)
+            folder.id = newFolder._id
+            this.setState({folder})
+          }).catch((error: any) => {
+            console.error(error);
+          });
+    }
+
+    changeDateStart = (event: any) => {
+        let folder = this.state.folder;
+        if(event.target.name === 'dateStart'){
+            folder.dateStart = event.target.value;
+        }
+        
+        this.setState({ folder});
     }
 
 
@@ -413,7 +469,7 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
         }     
 
         const { declarations, tableRender, alloc, openModalCloseFolder,
-             totalFolder, folder, declarationUpdate } = this.state
+             totalFolder, folder, declarationUpdate, openModalAddFolder } = this.state
         
         if(declarationUpdate!== null){
             return <Redirect to={`/declarations/form/${declarationUpdate}`}/>
@@ -423,11 +479,29 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
 
         let sjm = Math.round((totalFolder.grossSalary/(totalFolder.nbhours/8))*100)/100;
 
-        let modalBody = "Etes vous sur de vouloir clôturer le dossier en cours ?"
+        let closeModalBody = "Etes vous sur de vouloir clôturer le dossier en cours ?"
+        let addModalBody = (<React.Fragment>
+                <form>
+                <div className="form-group col-md-6">
+                    <TextField
+                    label="Date début"
+                    name="dateStart"
+                    type="date"
+                    required
+                    variant="outlined"
+                    onChange={this.changeDateStart}
+                    InputLabelProps={{
+                        shrink: true
+                    }}
+                />
+                </div>
+            </form>
+            </React.Fragment>
+        )
 
         return (
             <Wrapper>
-                { folder.dateStart && 
+                { folder.active ?
                 (<React.Fragment>
                     <div className="folderHeader">
                     <Title>Dossier en cours </Title>
@@ -443,13 +517,22 @@ class Summary extends React.Component<SummaryProps,SummaryState> {
                      }
                     </div>
                     <div className="buttonContainer">
-                        <p>depuis le {(moment(folder.dateStart).format('DD/MM/Y'))}</p>
-                        <IconButton onClick={this.handleOpen} ><Close /></IconButton>
+                        <p>depuis le {(moment(folder.dateStart!).format('DD/MM/Y'))}</p>
+                        <IconButton onClick={this.openModalClose} ><Close /></IconButton>
                     </div>
                     <CustomModal title="Clôturer le dossier" open={openModalCloseFolder} 
-                    handleClose={this.handleClose} buttonSubmit="Clôturer" body={modalBody}/>
+                    handleClose={this.closeModalClose} buttonSubmit="Clôturer" 
+                    body={closeModalBody} handleSubmit={this.closeFolder}/>
                     { declarations.length > 0 && tableRender }
-                 </React.Fragment>)}
+                 </React.Fragment>) : 
+                 (<React.Fragment>
+                     <div className="warning">
+                         <p>Aucun dossier en cours</p>
+                         <Button variant="contained" color="primary" onClick={this.openModalAdd}>Ajouter un dossier</Button>
+                         <CustomModal title="Ajouter un dossier" open={openModalAddFolder} 
+                        handleClose={this.closeModalAdd} buttonSubmit="Ajouter" 
+                        body={addModalBody} handleSubmit={this.addFolder}/>
+                     </div></React.Fragment>)}
             </Wrapper>
         )
     }
