@@ -25,6 +25,11 @@ class Links extends React.Component {
                                 Ajouter déclaration
                             </Link>
                         </Item>
+                        <Item>
+                            <Link to="/archive" className="nav-link">
+                                Archive
+                            </Link>
+                        </Item>
                     </div>
                 </div>
             </React.Fragment>

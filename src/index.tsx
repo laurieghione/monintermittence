@@ -1,17 +1,13 @@
 import React from 'react';
 import {render} from 'react-dom';
-import './index.css';
+import { createStore, compose, applyMiddleware } from 'redux'
 import App from './App';
 import * as serviceWorker from './serviceWorker';
 import { Provider } from 'react-redux';
-import { createStore } from 'redux';
-import { declarationReducer } from './store/reducer';
-export {actionCreators as DeclarationActionCreators } from './store/action';
+import rootReducer from './store/reducers';
+import thunk from 'redux-thunk';
 
-
-let store = createStore(declarationReducer);
-//store.dispatch({ type: "ADD_DECLARATION", declaration : new Declaration()});
-
+const store = createStore(rootReducer, undefined, applyMiddleware(thunk))
 
 render(
   <Provider store={store}>

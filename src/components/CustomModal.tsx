@@ -28,9 +28,9 @@ class CustomModal extends React.Component<CustomModalProps> {
                     <h4 id="modalTitle">{title}</h4>
                     <IconButton onClick={handleClose} ><Close /></IconButton>
                 </div>
-            <p id="modalBody">
+            <div id="modalBody">
                {body}
-            </p>
+            </div>
             <div className="modalFooter">
                 <Button variant="contained" onClick={handleClose}>Annuler</Button>
                 <Button variant="contained" color="primary" onClick={handleSubmit}>{buttonSubmit}</Button>

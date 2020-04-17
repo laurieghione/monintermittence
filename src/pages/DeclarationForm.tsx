@@ -1,4 +1,5 @@
 import React from 'react';
+import { bindActionCreators } from 'redux'
 import Declaration from '../model/declaration';
 import Folder from '../model/folder';
 import { connect } from 'react-redux';
@@ -11,6 +12,9 @@ import { TextField, MenuItem} from '@material-ui/core';
 import Employer from '../model/employer';
 import { RouteProps } from 'react-router';
 import { Button } from '@material-ui/core';
+import { addDeclaration, updateDeclaration } from '../store/actions/declarationAction';
+import { loadEmployers, addEmployer } from '../store/actions/employerAction';
+import { loadActiveFolder } from '../store/actions/folderAction';
 
 const Title = styled.h2.attrs({
     className: 'h2',
@@ -28,6 +32,9 @@ const Error = styled.p.attrs({
 `
 
 interface DFProps  {
+  declarations: Declaration[],
+  folder: Folder,
+  employers: Employer[]
 }
 
 interface DFState  {
@@ -35,9 +42,7 @@ interface DFState  {
   error : boolean,
   disabledHours : boolean,
   disabledDateEnd : boolean,
-  folder: Folder,
   isEdit: boolean,
-  employer: Employer[],
   redirect: boolean,
   employerSelected: any | null
 }
@@ -57,21 +62,19 @@ const annexe = [
   }
 ];
 
-export class DeclarationForm extends React.Component<DFProps & RouteProps, DFState>{
+export class DeclarationForm extends React.Component<DFProps & RouteProps & any , DFState>{
   private params: any;
 
-  constructor ( props : DFProps){
+  constructor ( props : DFProps & RouteProps & any ){
     super(props)
     this.state = {
       declaration: new Declaration(), 
       error: false,
-      folder : new Folder(),
       disabledHours : false,
       disabledDateEnd: false,
       redirect: false,
       isEdit: false,
-      employerSelected: null,
-      employer: []
+      employerSelected: null
     }
   }
 
@@ -81,11 +84,11 @@ export class DeclarationForm extends React.Component<DFProps & RouteProps, DFSta
           declaration.employer = value.name
           this.setState({declaration})
         }
-
     }
 
     handleChange = (event : any) => {
-      const {declaration,disabledDateEnd,disabledHours} = this.state
+      const {disabledDateEnd,disabledHours} = this.state
+      let declaration = this.state.declaration
 
       let dDateEnd = disabledDateEnd;
       let dHours = disabledHours;
@@ -148,35 +151,40 @@ export class DeclarationForm extends React.Component<DFProps & RouteProps, DFSta
   
     handleSubmit = (event : any) => {
       event.preventDefault();
-      let {declaration, employer, error } = this.state
+      let {declaration, error } = this.state
+      let {employers} = this.props
 
       let formIsValid = this.handleValidation();
       let employerExist:any;
 
       if(formIsValid){
         // Manage employer
-        employerExist = employer.find(empl => empl.name === declaration.employer)
+        employerExist = employers.find((empl: Employer) => empl.name === declaration.employer)
 
         if(employerExist === undefined){
           let empl: Employer = new Employer()
           empl.name = declaration.employer
 
-          api.insertEmployer(empl).then(() => {
+          //TO DO insert employer in state
+          api.insertEmployer(empl).then((data: any) => {
+            this.props.addEmployer(data.data.employer)
           }).catch((error) => {
             console.error(error);
           });
         }
 
         if(this.state.isEdit){
-          api.updateDeclarationById(declaration.id, declaration).then(() => {
+          api.updateDeclarationById(declaration._id, declaration).then(() => {
              window.alert(`La déclaration a bien été modifiée`);
+             this.props.updateDeclaration(declaration)
              this.setState({redirect: true});
           }).catch((error: any) => {
             console.error(error);
           });
         }else{
-          api.insertDeclaration(declaration).then(() => {
-            window.alert(`La déclaration a bien été ajoutée`);
+          api.insertDeclaration(declaration).then((data: any) => {
+            window.alert(`La déclaration a bien été ajoutée ` +  data.data.declaration._id);
+            this.props.addDeclaration(data.data.declaration)
             this.setState({redirect: true});
           }).catch((error) => {
             window.alert(error);
@@ -202,72 +210,52 @@ export class DeclarationForm extends React.Component<DFProps & RouteProps, DFSta
        })
     };
 
-    getEmployers = async(): Promise<any> =>{
-      return new Promise((resolve, reject) => {
-        api.getEmployers().then(res => {
-          console.log("get getEmployers")
-          if(res.data.data){
-            resolve(res.data.data)
-          }
-        }).catch((error) => {
-          reject(error)
-        });
-      })
-    }
+    getDeclaration = async(id: string): Promise<Declaration> => {
+      const {declarations} = this.props
 
-    getActiveFolder = async() : Promise<any> =>{
-      return new Promise((resolve, reject) => {
-        console.log("get active folder")
-        api.getActiveFolder().then(res => {
-          if(res.data.data){
-            resolve(res.data.data) 
-          }
-        }).catch((error) => {
-          reject(error)
-        });
-    });
-    }
-
-    getDeclaration = async(id: string): Promise<any> => {
-      let declarationUpdate: any
       return new Promise((resolve, reject) => {
         console.log("get getDeclaration")
         if(id){
-          api.getDeclarationById(id).then(res =>{
-            declarationUpdate = res.data.data
-            declarationUpdate.id = res.data.data._id
-            resolve(declarationUpdate)
-          }).catch((error) => {
-            reject(error)
-          });
+          const indexFind = declarations.findIndex((decla:Declaration) => decla._id.toString() === id);
+          resolve(declarations[indexFind])
         }else{
-          resolve()
+          reject()
         }
       })
      }
 
     componentDidMount = async () =>{
-      let {declaration, folder, employer, employerSelected, isEdit } = this.state
+      let {declaration, employerSelected, isEdit } = this.state
+      let { folder, employers } = this.props
       console.log('componentmount declaration form')
       await this.getParams().then(
         (id: any) => {
           isEdit = (id ? true : false) 
-           this.getActiveFolder().then((fold)=>{
-            folder.id = fold._id
-            folder.active = fold.active
-            declaration.folder = folder.id
+
+        //Get active folder
+        const folderPromise = !this.props.folder  
+        ? this.props.loadActiveFolder() 
+        : Promise.resolve(this.props.folder)
+
+        folderPromise.then(()=>{
+          declaration.folder = this.props.folder.id
+
+          //Get employers
+          const employerPromise = (!employers || employers.length === 0 )
+          ? this.props.loadEmployers() 
+          : Promise.resolve(this.props.employers)
+
+          return employerPromise.then(()=>{
+              console.log('getEmployers')
+              this.getDeclaration(id).then((decla)=>{
+                if(isEdit){
+                  declaration = decla
+                  employerSelected = this.getEmployerDeclarationUpdate(decla)
+                }
+                  this.setState({ isEdit, declaration, employerSelected });
+                })
+            })        
           })
-          this.getEmployers().then((employers)=>{
-            employer = employers
-            console.log('getEmployers')
-            this.getDeclaration(id).then((decla)=>{
-              if(isEdit){
-                declaration = decla
-                employerSelected = this.getEmployerDeclarationUpdate(employers, decla)
-              }
-                this.setState({ isEdit, declaration, employer, folder, employerSelected });
-              })
-          })        
         })
     }
 
@@ -275,9 +263,9 @@ export class DeclarationForm extends React.Component<DFProps & RouteProps, DFSta
       this.params = this.props
       
       if( this.params.match.params.id !== prevProps.match.params.id){
-        let {employer, isEdit } = this.state
+        let { isEdit } = this.state
         let declaration = new Declaration();
-        let employerSelected:any = null
+        let employerSelected= { ...this.state.employerSelected}
 
         await this.getParams().then(
           (id: string) => {
@@ -285,9 +273,8 @@ export class DeclarationForm extends React.Component<DFProps & RouteProps, DFSta
            
             if(isEdit){
               this.getDeclaration(id).then((decla)=>{
-                
                   declaration = decla
-                  employerSelected = this.getEmployerDeclarationUpdate(employer, decla)  
+                  employerSelected = this.getEmployerDeclarationUpdate(decla)  
                 this.setState({ isEdit, declaration, employerSelected });          
               })
             }else{
@@ -297,17 +284,19 @@ export class DeclarationForm extends React.Component<DFProps & RouteProps, DFSta
           }
     }
 
-    getEmployerDeclarationUpdate = (employers :any, declaration:any): Declaration => {     
-      let employerSelected = this.state.employerSelected
+    getEmployerDeclarationUpdate = (declaration: Declaration): Declaration => {     
+      let employerSelected = {...this.state.employerSelected}
       console.log("employerSelected")
 
-      employerSelected = employers.find((emp: any) => emp.name === declaration.employer)
+      employerSelected = this.props.employers.find((emp: any) => emp.name === declaration.employer)
 
       return employerSelected;
   }
 
     render() {
-      const {declaration, folder,employerSelected, disabledHours,disabledDateEnd, employer, redirect, isEdit } = this.state
+      console.log('props form', this.props)
+    const {folder, employers} = this.props
+    const {declaration,employerSelected, disabledHours,disabledDateEnd, redirect, isEdit } = this.state
      console.log('render')
      console.log(redirect,'redirect')
       if (redirect) {
@@ -316,7 +305,7 @@ export class DeclarationForm extends React.Component<DFProps & RouteProps, DFSta
 
       let render: any = (
           <React.Fragment>
-          {folder.active && (
+          {(folder && folder.active) && (
           <Wrapper>
             <Title>{isEdit ? "Modifier une déclaration" : "Ajouter une déclaration"}</Title>
             <form >
@@ -381,7 +370,7 @@ export class DeclarationForm extends React.Component<DFProps & RouteProps, DFSta
               <div className="form-row">
                 <div className="form-group col-md-6">
                 <Autocomplete
-                  options={employer}
+                  options={employers}
                   onChange={this.autocompleteChange}
                   freeSolo={true}
                   value={employerSelected ? employerSelected : null} 
@@ -484,13 +473,16 @@ export class DeclarationForm extends React.Component<DFProps & RouteProps, DFSta
     }
   }
 
-  function mapStateToProps(state : any) {
+  const mapDispatchToProps = (dispatch: any) => bindActionCreators(
+    { addDeclaration, updateDeclaration, loadEmployers, addEmployer, loadActiveFolder }, dispatch,
+  )
+
+  function mapStateToProps(applicationState : any) {
     return {
-      declaration: state.declaration
-    };
+      declarations: applicationState.declarationReducer.declarations,
+      folder: applicationState.folderReducer.folder,
+      employers: applicationState.employerReducer.employers
+      }
   }
 
-  export default connect( mapStateToProps, null)(DeclarationForm)
-
-
-  
+  export default connect(mapStateToProps, mapDispatchToProps)(DeclarationForm)

@@ -21,7 +21,7 @@ const createEmployer = (req, res) => {
         .then(() => {
             return res.status(201).json({
                 success: true,
-                id: employer._id,
+                employer: employer,
                 message: 'employer created!',
             })
         })

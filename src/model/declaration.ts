@@ -1,5 +1,7 @@
+import { ObjectID } from "mongodb"
+
 export default class Declaration{
-    id: string
+    _id: ObjectID
     annexe: string
     dateStart: Date | null
     dateEnd: Date | null
@@ -17,9 +19,10 @@ export default class Declaration{
     folder: string
 
     constructor(){
-        this.id = ''
+        this._id = new ObjectID()
         this.annexe = ''
         this.folder = ''
+        this.label = ''
         this.dateStart = null
         this.dateEnd = null
         this.employer = ''

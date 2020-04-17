@@ -1,10 +1,11 @@
 import React from 'react';
-import './App.css';
-import Navbar from './components/Navbar';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom'
-import { DeclarationForm } from './pages/DeclarationForm';
+import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import Navbar from './components/Navbar';
+import DeclarationForm from './pages/DeclarationForm';
 import Summary from './pages/Summary';
+import Archive from './pages/Archive';
 
 class App extends React.Component {
   public render() {
@@ -15,6 +16,7 @@ class App extends React.Component {
                 <Route path="/declarations/list" exact component={Summary} />
                 <Route path="/declarations/form/:id" component={DeclarationForm} />
                 <Route path="/declarations/form" component={DeclarationForm} />
+                <Route path="/archive" component={Archive} />
           </Switch>
       </Router>
     );

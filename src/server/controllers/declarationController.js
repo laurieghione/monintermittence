@@ -21,7 +21,7 @@ const createDeclaration = (req, res) => {
         .then(() => {
             return res.status(201).json({
                 success: true,
-                id: declaration._id,
+                declaration: declaration,
                 message: 'declaration created!',
             })
         })

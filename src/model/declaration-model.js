@@ -20,4 +20,6 @@ const Declaration = new Schema(
     },
     { timestamps: true },
 )
+
+
 module.exports = mongoose.model('declaration', Declaration)
