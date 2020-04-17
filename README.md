@@ -12,6 +12,8 @@ This project is a MERN App to help the "intermittent du spectacle" to manage the
 - Bootstrap
 - Styled components
 - Moment
+- Thunk
+- Redux : to create a store with global state
 
 ## V1 :
 
