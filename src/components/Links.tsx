@@ -1,40 +1,81 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
-import styled from 'styled-components'
+import React from "react";
+import { connect } from "react-redux";
+import { Link } from "react-router-dom";
+import { Button } from "@material-ui/core";
+import { bindActionCreators } from "redux";
+import { logout, login } from "../store/actions/authAction";
 
-const Item = styled.div.attrs({
-    className: 'collpase navbar-collapse',
-})``
-
-class Links extends React.Component {
-    render() {
-        return (
-            <React.Fragment>
-                <Link to="/declarations/list" className="navbar-brand">
-                    Mon intermittence
-                </Link>
-                <div className="collpase navbar-collapse">
-                    <div className="navbar-nav mr-auto">
-                        <Item>
-                            <Link to="/declarations/list" className="nav-link">
-                                Récapitulatif
-                            </Link>
-                        </Item>
-                        <Item>
-                            <Link to="/declarations/form" className="nav-link">
-                                Ajouter déclaration
-                            </Link>
-                        </Item>
-                        <Item>
-                            <Link to="/archive" className="nav-link">
-                                Archive
-                            </Link>
-                        </Item>
-                    </div>
-                </div>
-            </React.Fragment>
-        )
-    }
+interface LinksProps {
+  isAuthenticated: boolean;
+  profile: any;
 }
 
-export default Links
+class Links extends React.Component<LinksProps & any> {
+  constructor(props: LinksProps & any) {
+    super(props);
+  }
+
+  render() {
+    const { isAuthenticated, profile, login, logout } = this.props;
+
+    console.log("render links");
+
+    return (
+      <React.Fragment>
+        <Link to="/" className="navbar-brand">
+          Mon intermittence
+        </Link>
+        <div className="collpase navbar-collapse justify-content-between">
+          <div className="navbar-links navbar-nav">
+            <Link to="/declarations/list" className="nav-link nav-item">
+              Récapitulatif
+            </Link>
+            <Link to="/declarations/form" className="nav-link nav-item">
+              Ajouter déclaration
+            </Link>
+            <Link to="/archive" className="nav-link nav-item">
+              Archive
+            </Link>
+            {isAuthenticated && (
+              <Link to="/profile" className="nav-link nav-item">
+                Profile
+              </Link>
+            )}
+          </div>
+          <div className="navbar-button">
+            {isAuthenticated && profile ? (
+              <React.Fragment>
+                <p>{profile.nickname}</p>
+                <Button variant="contained" onClick={logout}>
+                  LogOut
+                </Button>
+              </React.Fragment>
+            ) : (
+              <Button variant="contained" onClick={login}>
+                LogIn
+              </Button>
+            )}
+          </div>
+        </div>
+      </React.Fragment>
+    );
+  }
+}
+
+const mapDispatchToProps = (dispatch: any) =>
+  bindActionCreators(
+    {
+      logout,
+      login,
+    },
+    dispatch
+  );
+
+function mapStateToProps(applicationState: any) {
+  return {
+    profile: applicationState.authReducer.profile,
+    isAuthenticated: applicationState.authReducer.isAuthenticated,
+  };
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(Links);

@@ -2,12 +2,13 @@ This project is a MERN App to help the "intermittent du spectacle" to manage the
 
 - Mongo db : Database no SQL
 - Express.js : RESTful APIs
-- React.js : Javascript Front-end library 
+- React.js : Javascript Front-end library
 - Node.js : A javascript runtime
 
 ## Package used
 
 - Material UI
+- Auth0
 - Mongoose
 - Bootstrap
 - Styled components
@@ -24,19 +25,14 @@ This project is a MERN App to help the "intermittent du spectacle" to manage the
 - Autocompletion of employer's names
 - Responsive
 - Manage upload of documents
+- User authentification with JWT
 
 ## V2 :
 
 - Archive page to see the old folders
 - Add confirmation modal to delete income
 - Statistic page with Highcharts
-- User authentification
-- Add functionality of simulate 
-
-## Server start
-To start the server, you can run :
-
-in src/server
+- Add functionality of simulate
 
 ### `node index.js`
 
@@ -48,11 +44,10 @@ Swagger doc coming soon
 
 In the project directory, you can run:
 
-### `npm start`
+### `npm start` to start server and app
 
 Runs the app in the development mode.<br />
-Open [http://localhost:8080/](http://localhost:8080) to view it in the browser.
+Open [http://localhost:8081/](http://localhost:8081) to view it in the browser.
 
 The page will reload if you make edits.<br />
 You will also see any lint errors in the console.
-
