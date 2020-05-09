@@ -135,11 +135,23 @@
   margin-right: 30px;
 }
 
+/** STATISTIC **/
+
+.charts {
+  margin-top: 50px;
+  display: flex;
+  flex-direction: row;
+}
+
 /** RESPONSIVE **/
 /* Small devices (landscape phones, less than 768px)*/
 @media (max-width: 767.98px) {
   .monthHeader,
   .folderHeader {
+    flex-direction: column;
+  }
+
+  .charts {
     flex-direction: column;
   }
 

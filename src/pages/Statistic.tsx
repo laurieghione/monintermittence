@@ -21,6 +21,7 @@ interface StatisticProps {
 }
 interface StatisticState {
   barData: any;
+  pieData: any;
 }
 
 class Statistic extends React.Component<StatisticProps & any, StatisticState> {
@@ -28,33 +29,65 @@ class Statistic extends React.Component<StatisticProps & any, StatisticState> {
     super(props);
     this.state = {
       barData: [],
+      pieData: [],
     };
   }
 
-  getDeclarationByMonth = async (declarations: Declaration[]): Promise<any> => {
-    let obj: any = null;
-    let tableData: any[] = [];
+  getDatas = async (declarations: Declaration[]): Promise<any> => {
+    let objBar: any = null;
+    let objPie: any = null;
+    let tableData: any = {};
+    let tableBar: any[] = [];
+    let tablePie: any[] = [];
     let nameMemory: any = "";
 
     return new Promise((resolve) => {
-      declarations.map((d: Declaration) => {
-        let month: any = moment(d.dateStart!).format("MMM");
-        let year: any = moment(d.dateStart!).format("Y");
+      declarations.map((decla: Declaration) => {
+        let month: any = moment(decla.dateStart!).format("MMM");
+        let year: any = moment(decla.dateStart!).format("Y");
         let name = month + " " + year;
 
-        if (!obj) {
-          obj = {};
-          obj.name = name;
-          obj.y = d.nbhours;
+        //pie chart
+        if (
+          !objPie ||
+          (tablePie.length > 0 &&
+            tablePie.findIndex((data) => data.name === decla.employer) === -1)
+        ) {
+          objPie = {};
+          objPie.name = decla.employer;
+          objPie.y = decla.nbhours;
+          tablePie.push(objPie);
+        } else if (
+          tablePie.length > 0 &&
+          tablePie.findIndex((data) => data.name === decla.employer) !== -1
+        ) {
+          let findIndex = tablePie.findIndex(
+            (data) => data.name === decla.employer
+          );
+          tablePie[findIndex].y += decla.nbhours;
+        }
+
+        //bar chart
+        if (!objBar) {
+          objBar = {};
+          objBar.name = name;
+          objBar.y = decla.nbhours;
         } else if (nameMemory !== name) {
-          tableData.push(obj);
-          obj = null;
+          tableBar.push(objBar);
+          objBar = {};
+          objBar.name = name;
+          objBar.y = decla.nbhours;
         } else if (nameMemory === name) {
-          obj.y += d.nbhours;
+          objBar.y += decla.nbhours;
         }
 
         nameMemory = name;
       });
+
+      tableBar.push(objBar);
+
+      tableData.bar = tableBar;
+      tableData.pie = tablePie;
       resolve(tableData);
     });
   };
@@ -69,12 +102,10 @@ class Statistic extends React.Component<StatisticProps & any, StatisticState> {
           : Promise.resolve(this.props.declarations);
 
       declarationPromise.then(() => {
-        this.getDeclarationByMonth(this.props.declarations).then(
-          (data: any) => {
-            console.log("highcharts data", data);
-            this.setState({ barData: data });
-          }
-        );
+        this.getDatas(this.props.declarations).then((data: any) => {
+          console.log("highcharts data", data);
+          this.setState({ barData: data.bar, pieData: data.pie });
+        });
       });
     }
   }
@@ -82,11 +113,32 @@ class Statistic extends React.Component<StatisticProps & any, StatisticState> {
   render() {
     console.log("statistic render");
     console.log(this.props);
-    const { barData } = this.state;
+    const { barData, pieData } = this.state;
     if (barData) {
-      const options = {
+      const pieOptions = {
         title: {
-          text: "Nombre d'heures / mois",
+          text: "Nombre d'heures / Employeurs",
+        },
+        chart: {
+          type: "pie",
+        },
+        credits: {
+          enabled: false,
+        },
+
+        legend: {
+          enabled: false,
+        },
+
+        series: [
+          {
+            data: pieData,
+          },
+        ],
+      };
+      const barOptions = {
+        title: {
+          text: "Nombre d'heures / mois ",
         },
         chart: {
           type: "column",
@@ -112,11 +164,14 @@ class Statistic extends React.Component<StatisticProps & any, StatisticState> {
           },
         ],
       };
+
       return (
         <Wrapper>
-          <Title>Statistiques</Title>
-
-          <HighchartsReact highcharts={Highcharts} options={options} />
+          <Title>Statistiques du dossier en cours</Title>
+          <div className="charts">
+            <HighchartsReact highcharts={Highcharts} options={barOptions} />
+            <HighchartsReact highcharts={Highcharts} options={pieOptions} />
+          </div>
         </Wrapper>
       );
     }
