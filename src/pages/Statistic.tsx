@@ -7,6 +7,7 @@ import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 import { loadDeclarations } from "../store/actions/declarationAction";
 import Declaration from "../model/declaration";
+import { CircularProgress } from "@material-ui/core";
 
 const Title = styled.h2.attrs({
   className: "title",
@@ -22,6 +23,7 @@ interface StatisticProps {
 interface StatisticState {
   barData: any;
   pieData: any;
+  isLoading: boolean;
 }
 
 class Statistic extends React.Component<StatisticProps & any, StatisticState> {
@@ -30,6 +32,7 @@ class Statistic extends React.Component<StatisticProps & any, StatisticState> {
     this.state = {
       barData: [],
       pieData: [],
+      isLoading: true,
     };
   }
 
@@ -104,94 +107,116 @@ class Statistic extends React.Component<StatisticProps & any, StatisticState> {
       declarationPromise.then(() => {
         this.getDatas(this.props.declarations).then((data: any) => {
           console.log("highcharts data", data);
-          this.setState({ barData: data.bar, pieData: data.pie });
+          this.setState({
+            barData: data.bar,
+            pieData: data.pie,
+            isLoading: false,
+          });
         });
+      });
+    } else {
+      this.setState({
+        isLoading: false,
       });
     }
   }
 
   render() {
     console.log("statistic render");
-    console.log(this.props);
-    const { barData, pieData } = this.state;
-    if (barData) {
-      const pieOptions = {
-        title: {
-          text: "Nombre d'heures / Employeurs",
-        },
-        chart: {
-          type: "pie",
-          width: 500,
-        },
-        plotOptions: {
-          pie: {
-            dataLabels: {
-              enabled: true,
-              distance: -40,
-              style: {
-                fontWeight: "bold",
-                color: "white",
-              },
+    const { barData, pieData, isLoading } = this.state;
+
+    const pieOptions = {
+      title: {
+        text: "Nombre d'heures / Employeurs",
+      },
+      chart: {
+        type: "pie",
+        width: 500,
+      },
+      plotOptions: {
+        pie: {
+          dataLabels: {
+            enabled: true,
+            distance: -40,
+            style: {
+              fontWeight: "bold",
+              color: "white",
             },
           },
         },
-        credits: {
-          enabled: false,
-        },
+      },
+      credits: {
+        enabled: false,
+      },
 
-        legend: {
-          enabled: false,
-        },
+      legend: {
+        enabled: false,
+      },
 
-        series: [
-          {
-            data: pieData,
-          },
-        ],
-      };
-      const barOptions = {
+      series: [
+        {
+          data: pieData,
+        },
+      ],
+    };
+    const barOptions = {
+      title: {
+        text: "Nombre d'heures / mois ",
+      },
+      chart: {
+        type: "column",
+      },
+      credits: {
+        enabled: false,
+      },
+      xAxis: {
+        type: "category",
+      },
+      yAxis: {
         title: {
-          text: "Nombre d'heures / mois ",
+          text: "Nombre d'heures",
         },
-        chart: {
-          type: "column",
-        },
-        credits: {
-          enabled: false,
-        },
-        xAxis: {
-          type: "category",
-        },
-        yAxis: {
-          title: {
-            text: "Nombre d'heures",
-          },
-        },
-        legend: {
-          enabled: false,
-        },
+      },
+      legend: {
+        enabled: false,
+      },
 
-        series: [
-          {
-            data: barData,
-          },
-        ],
-      };
+      series: [
+        {
+          data: barData,
+        },
+      ],
+    };
 
-      return (
-        <Wrapper>
-          <Title>Statistiques du dossier en cours</Title>
-          <div className="charts">
-            <HighchartsReact highcharts={Highcharts} options={barOptions} />
-            <HighchartsReact
-              containerProps={{ className: "pieChart" }}
-              highcharts={Highcharts}
-              options={pieOptions}
-            />
-          </div>
-        </Wrapper>
-      );
-    }
+    return (
+      <React.Fragment>
+        {isLoading ? (
+          <React.Fragment>
+            <div className="loader">
+              <CircularProgress size={70} />
+            </div>
+          </React.Fragment>
+        ) : this.props.folder ? (
+          <Wrapper>
+            <Title>Statistiques du dossier en cours</Title>
+            <div className="charts">
+              <HighchartsReact highcharts={Highcharts} options={barOptions} />
+              <HighchartsReact
+                containerProps={{ className: "pieChart" }}
+                highcharts={Highcharts}
+                options={pieOptions}
+              />
+            </div>
+          </Wrapper>
+        ) : (
+          <React.Fragment>
+            <div className="warning">
+              <p>Aucun dossier en cours</p>
+            </div>
+          </React.Fragment>
+        )}
+      </React.Fragment>
+    );
   }
 }
 
