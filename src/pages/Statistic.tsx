@@ -121,6 +121,19 @@ class Statistic extends React.Component<StatisticProps & any, StatisticState> {
         },
         chart: {
           type: "pie",
+          width: 500,
+        },
+        plotOptions: {
+          pie: {
+            dataLabels: {
+              enabled: true,
+              distance: -40,
+              style: {
+                fontWeight: "bold",
+                color: "white",
+              },
+            },
+          },
         },
         credits: {
           enabled: false,
@@ -170,7 +183,11 @@ class Statistic extends React.Component<StatisticProps & any, StatisticState> {
           <Title>Statistiques du dossier en cours</Title>
           <div className="charts">
             <HighchartsReact highcharts={Highcharts} options={barOptions} />
-            <HighchartsReact highcharts={Highcharts} options={pieOptions} />
+            <HighchartsReact
+              containerProps={{ className: "pieChart" }}
+              highcharts={Highcharts}
+              options={pieOptions}
+            />
           </div>
         </Wrapper>
       );

@@ -135,12 +135,23 @@
   margin-right: 30px;
 }
 
+.nickName {
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+}
+
 /** STATISTIC **/
 
 .charts {
   margin-top: 50px;
   display: flex;
   flex-direction: row;
+  overflow: visible !important;
+}
+.pieChart {
+  display: flex;
+  align-self: center;
 }
 
 /** RESPONSIVE **/

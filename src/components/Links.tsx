@@ -48,7 +48,7 @@ class Links extends React.Component<LinksProps & any> {
           <div className="navbar-button">
             {isAuthenticated && profile ? (
               <React.Fragment>
-                <p>{profile.nickname}</p>
+                <p className="nickName">{profile.nickname}</p>
                 <Button variant="contained" onClick={logout}>
                   LogOut
                 </Button>
