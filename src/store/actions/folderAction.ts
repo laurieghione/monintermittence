@@ -30,8 +30,7 @@ export function loadActiveFolder(user: string) {
       const folder = await apis.getActiveFolder(user);
       dispatch(loadFolderSuccess(folder.data.data));
     } catch (err) {
-      console.error(err);
-      throw err;
+      console.log(err);
     }
   };
 }

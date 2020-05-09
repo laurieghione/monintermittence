@@ -17,7 +17,6 @@ import {
   updateDeclaration,
 } from "../store/actions/declarationAction";
 import { loadEmployers, addEmployer } from "../store/actions/employerAction";
-import { loadActiveFolder } from "../store/actions/folderAction";
 
 const Title = styled.h2.attrs({
   className: "h2",
@@ -40,7 +39,6 @@ interface DFProps {
   declarations: Declaration[];
   folder: Folder;
   employers: Employer[];
-  profile: any;
 }
 
 interface DFState {
@@ -243,20 +241,14 @@ export class DeclarationForm extends React.Component<
 
   componentDidMount = async () => {
     let { declaration, employerSelected, isEdit } = this.state;
-    let { auth, profile } = this.props;
+    let { auth, isFetching, folder } = this.props;
     console.log("componentmount declaration form");
-    await this.getParams().then((id: any) => {
-      isEdit = id ? true : false;
 
-      const user = profile.email;
+    if (!isFetching && folder) {
+      await this.getParams().then((id: any) => {
+        isEdit = id ? true : false;
 
-      //Get active folder
-      const folderPromise = !this.props.folder
-        ? this.props.loadActiveFolder(user, auth)
-        : Promise.resolve(this.props.folder);
-
-      folderPromise.then(() => {
-        declaration.folder = this.props.folder.id;
+        declaration.folder = folder.id;
 
         //Get employers
         const employerPromise =
@@ -276,7 +268,7 @@ export class DeclarationForm extends React.Component<
           }
         });
       });
-    });
+    }
   };
 
   componentDidUpdate = async (prevProps: any) => {
@@ -333,7 +325,7 @@ export class DeclarationForm extends React.Component<
 
     let render: any = (
       <React.Fragment>
-        {folder && folder.active && (
+        {folder && folder.active ? (
           <Wrapper>
             <Title>
               {isEdit ? "Modifier une déclaration" : "Ajouter une déclaration"}
@@ -520,6 +512,12 @@ export class DeclarationForm extends React.Component<
               </div>
             </form>
           </Wrapper>
+        ) : (
+          <React.Fragment>
+            <div className="warning">
+              <p>Aucun dossier trouvé</p>
+            </div>
+          </React.Fragment>
         )}
       </React.Fragment>
     );
@@ -535,7 +533,6 @@ const mapDispatchToProps = (dispatch: any) =>
       updateDeclaration,
       loadEmployers,
       addEmployer,
-      loadActiveFolder,
     },
     dispatch
   );
@@ -545,7 +542,7 @@ function mapStateToProps(applicationState: any) {
     declarations: applicationState.declarationReducer.declarations,
     folder: applicationState.folderReducer.folder,
     employers: applicationState.employerReducer.employers,
-    profile: applicationState.authReducer.profile,
+    isFetching: applicationState.authReducer.isFetching,
   };
 }
 

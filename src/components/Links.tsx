@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@material-ui/core";
 import { bindActionCreators } from "redux";
 import { logout, login } from "../store/actions/authAction";
+import { application } from "express";
 
 interface LinksProps {
   isAuthenticated: boolean;
@@ -16,10 +17,7 @@ class Links extends React.Component<LinksProps & any> {
   }
 
   render() {
-    const { isAuthenticated, profile, login, logout } = this.props;
-
-    console.log("render links");
-
+    const { isAuthenticated, profile, login, logout, folder } = this.props;
     return (
       <React.Fragment>
         <Link to="/" className="navbar-brand">
@@ -30,11 +28,16 @@ class Links extends React.Component<LinksProps & any> {
             <Link to="/declarations/list" className="nav-link nav-item">
               Récapitulatif
             </Link>
-            <Link to="/declarations/form" className="nav-link nav-item">
-              Ajouter déclaration
-            </Link>
+            {folder && (
+              <Link to="/declarations/form" className="nav-link nav-item">
+                Ajouter déclaration
+              </Link>
+            )}
             <Link to="/archive" className="nav-link nav-item">
               Archive
+            </Link>
+            <Link to="/statistic" className="nav-link nav-item">
+              Statistique
             </Link>
             {isAuthenticated && (
               <Link to="/profile" className="nav-link nav-item">
@@ -75,6 +78,7 @@ function mapStateToProps(applicationState: any) {
   return {
     profile: applicationState.authReducer.profile,
     isAuthenticated: applicationState.authReducer.isAuthenticated,
+    folder: applicationState.folderReducer.folder,
   };
 }
 

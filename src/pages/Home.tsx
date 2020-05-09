@@ -11,9 +11,7 @@ const Title = styled.h2.attrs({
 
 const Wrapper = styled.div.attrs({
   className: "container",
-})`
-  padding: 0 40px 40px 40px;
-`;
+})``;
 
 interface HomeProps {
   location: any;
@@ -44,7 +42,7 @@ class Home extends React.Component<HomeProps & any> {
           <Wrapper>
             <Title>
               Bienvenue {this.props.profile ? this.props.profile.nickname : ""}{" "}
-              sur mon intermittence !
+              dans mon intermittence !
             </Title>
           </Wrapper>
         )}

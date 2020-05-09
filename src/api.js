@@ -41,8 +41,8 @@ export const getEmployers = () =>
       Authorization: `Bearer ${localStorage.getItem("access_token")}`,
     },
   });
-export const getFolders = () =>
-  api.get(`/folders`, {
+export const getFolders = (user) =>
+  api.get(`/folders/${user}`, {
     headers: {
       Authorization: `Bearer ${localStorage.getItem("access_token")}`,
     },

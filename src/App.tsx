@@ -11,6 +11,8 @@ import { connect } from "react-redux";
 import Profile from "./pages/Profile";
 import Home from "./pages/Home";
 import { getUserInfo } from "./store/actions/authAction";
+import { loadActiveFolder } from "./store/actions/folderAction";
+import Statistic from "./pages/Statistic";
 
 class App extends React.Component<any> {
   constructor(props: any) {
@@ -20,6 +22,12 @@ class App extends React.Component<any> {
   componentDidMount() {
     if (this.props.isAuthenticated && !this.props.profile) {
       this.props.getUserInfo();
+    }
+  }
+
+  componentDidUpdate(prevProps: any) {
+    if (this.props.profile && prevProps.profile !== this.props.profile) {
+      this.props.loadActiveFolder(this.props.profile.email);
     }
   }
 
@@ -59,8 +67,27 @@ class App extends React.Component<any> {
               return <DeclarationForm {...props} />;
             }}
           />
-          <Route path="/archive" component={Archive} />
+          <Route
+            path="/archive"
+            render={(props) => {
+              if (!this.props.isAuthenticated) {
+                return <Redirect to="/" />;
+              }
+
+              return <Archive {...props} />;
+            }}
+          />
           <Route path="/profile" component={Profile} />
+          <Route
+            path="/statistic"
+            render={(props) => {
+              if (!this.props.isAuthenticated) {
+                return <Redirect to="/" />;
+              }
+
+              return <Statistic {...props} />;
+            }}
+          />
         </Switch>
       </React.Fragment>
     );
@@ -71,6 +98,7 @@ const mapDispatchToProps = (dispatch: any) =>
   bindActionCreators(
     {
       getUserInfo,
+      loadActiveFolder,
     },
     dispatch
   );

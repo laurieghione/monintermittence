@@ -51,3 +51,13 @@ Open [http://localhost:8081/](http://localhost:8081) to view it in the browser.
 
 The page will reload if you make edits.<br />
 You will also see any lint errors in the console.
+
+## Environment Variables
+
+a .env file with this variables :
+
+- REACT_APP_AUTH0_DOMAIN is the auth0 domain
+- REACT_APP_AUTH0_CLIENT_ID is auth0 client id
+- REACT_APP_AUTH0_CALLBACK_URL is app home url for example : http://localhost:8081
+- REACT_APP_AUTH0_AUDIENCE is server url for example : http://localhost:3000
+- REACT_APP_API_URL is api url for example : http://localhost:3000

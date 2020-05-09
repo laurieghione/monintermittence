@@ -17,7 +17,6 @@ import {
   loadDeclarations,
   deleteDeclaration,
 } from "../store/actions/declarationAction";
-import { loadActiveFolder } from "../store/actions/folderAction";
 import ModalAddFolder from "../components/ModalAddFolder";
 import ModalCloseFolder from "../components/ModalCloseFolder";
 
@@ -27,9 +26,7 @@ const Title = styled.h2.attrs({
 
 const Wrapper = styled.div.attrs({
   className: "container",
-})`
-  padding: 0 40px 40px 40px;
-`;
+})``;
 const Month = styled.p.attrs({})`
   font-weight: bold;
 `;
@@ -45,7 +42,6 @@ const Tagheaders = styled.span.attrs({
 interface SummaryProps {
   declarations: Declaration[];
   folder: Folder;
-  profile: any;
 }
 
 interface SummaryState {
@@ -324,58 +320,43 @@ class Summary extends React.Component<SummaryProps & any, SummaryState> {
 
   componentDidMount = () => {
     moment.locale("fr");
-    console.log("componentDidMount");
-    const { profile, isFetching } = this.props;
+    console.log("componentDidMount summary");
+    const { isFetching } = this.props;
 
-    if (!isFetching && profile) {
-      const user = profile.email;
+    if (!isFetching) {
+      if (!this.props.folder) {
+        this.setState({ isLoading: false });
+        return;
+      }
+      //Get declarations
+      const declarationPromise =
+        !this.props.declarations || this.props.declarations.length === 0
+          ? this.props.loadDeclarations(this.props.folder._id)
+          : Promise.resolve(this.props.declarations);
 
-      //Get active folder
-      const folderPromise = !this.props.folder
-        ? this.props.loadActiveFolder(user).catch((error: any) => {
-            this.setState({ isLoading: false });
-          })
-        : Promise.resolve(this.props.folder);
-
-      return folderPromise
+      declarationPromise
         .then(() => {
-          if (!this.props.folder) {
-            return;
-          }
-          //Get declarations
-          const declarationPromise =
-            !this.props.declarations || this.props.declarations.length === 0
-              ? this.props.loadDeclarations(this.props.folder._id)
-              : Promise.resolve(this.props.declarations);
+          this.getDeclarationByMonth(this.props.declarations).then(
+            (monthArray: any) => {
+              console.log("monthArray", monthArray);
+              let totalMonthArray: any[] = this.getTotalByMonth(monthArray);
+              let totalFolder: any = this.getTotalByFolder(totalMonthArray);
+              let alloc: number = this.getAllocation(totalFolder);
 
-          declarationPromise
-            .then(() => {
-              this.getDeclarationByMonth(this.props.declarations).then(
-                (monthArray: any) => {
-                  let totalMonthArray: any[] = this.getTotalByMonth(monthArray);
-                  let totalFolder: any = this.getTotalByFolder(totalMonthArray);
-                  let alloc: number = this.getAllocation(totalFolder);
+              let tableRender = monthArray.map((obj: any, index: number) => {
+                return this.getTableHeader(index, totalMonthArray);
+              });
 
-                  let tableRender = monthArray.map(
-                    (obj: any, index: number) => {
-                      return this.getTableHeader(index, totalMonthArray);
-                    }
-                  );
-
-                  this.setState({
-                    monthArray,
-                    alloc,
-                    totalMonthArray,
-                    totalFolder,
-                    isLoading: false,
-                    tableRender,
-                  });
-                }
-              );
-            })
-            .catch(() => {
-              this.setState({ isLoading: false });
-            });
+              this.setState({
+                monthArray,
+                alloc,
+                totalMonthArray,
+                totalFolder,
+                isLoading: false,
+                tableRender,
+              });
+            }
+          );
         })
         .catch(() => {
           this.setState({ isLoading: false });
@@ -472,7 +453,11 @@ class Summary extends React.Component<SummaryProps & any, SummaryState> {
   };
 
   displayModal = () => {
-    this.setState({ openModal: !this.state.openModal });
+    this.setState({ openModal: true });
+  };
+
+  closeModal = () => {
+    this.setState({ openModal: false });
   };
 
   render() {
@@ -534,7 +519,7 @@ class Summary extends React.Component<SummaryProps & any, SummaryState> {
             </div>
             <ModalCloseFolder
               openModal={openModal}
-              closeModal={this.displayModal}
+              closeModal={this.closeModal}
             />
             {declarations.length > 0 && tableRender}
           </React.Fragment>
@@ -551,7 +536,7 @@ class Summary extends React.Component<SummaryProps & any, SummaryState> {
               </Button>
               <ModalAddFolder
                 openModal={openModal}
-                closeModal={this.displayModal}
+                closeModal={this.closeModal}
               />
             </div>
           </React.Fragment>
@@ -562,16 +547,12 @@ class Summary extends React.Component<SummaryProps & any, SummaryState> {
 }
 
 const mapDispatchToProps = (dispatch: any) =>
-  bindActionCreators(
-    { loadDeclarations, loadActiveFolder, deleteDeclaration },
-    dispatch
-  );
+  bindActionCreators({ loadDeclarations, deleteDeclaration }, dispatch);
 
 function mapStateToProps(applicationState: any) {
   return {
     declarations: applicationState.declarationReducer.declarations,
     folder: applicationState.folderReducer.folder,
-    profile: applicationState.authReducer.profile,
     isFetching: applicationState.authReducer.isFetching,
   };
 }

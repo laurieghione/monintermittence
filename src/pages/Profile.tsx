@@ -8,9 +8,7 @@ const Title = styled.h2.attrs({
 
 const Wrapper = styled.div.attrs({
   className: "container",
-})`
-  padding: 0 40px 40px 40px;
-`;
+})``;
 
 interface ProfileProps {
   profile: any;

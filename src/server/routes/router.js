@@ -14,7 +14,7 @@ router.post("/folder", FolderControl.createFolder);
 router.post("/employer", EmployerControl.createEmployer);
 router.get("/employer", EmployerControl.getEmployers);
 router.get("/folder/:user", FolderControl.getFolderActive);
-router.get("/folders", FolderControl.getFoldersInactive);
+router.get("/folders/:user", FolderControl.getFoldersInactive);
 router.put("/declaration/:id", DeclarationControl.updateDeclaration);
 router.put("/folder/:id", FolderControl.updateFolder);
 

@@ -37,16 +37,18 @@ class ModalAddFolder extends React.Component<
     this.setState({ folder });
   };
 
-  addFolder = () => {
+  createFolder = () => {
     let folder = { ...this.state.folder };
 
-    folder.user = this.props.profile;
+    folder.user = this.props.profile.email;
 
     apis
       .insertFolder(folder)
       .then((data: any) => {
-        window.alert(`Folder inserted successfully`);
-        this.props.addFolder({ ...folder, id: data.id });
+        window.alert(`Folder inserted successfully ` + data.data.id);
+
+        this.props.addFolder({ ...folder, id: data.data.id });
+        this.props.closeModal();
       })
       .catch((error: any) => {
         console.error(error);
@@ -83,7 +85,7 @@ class ModalAddFolder extends React.Component<
         handleClose={closeModal}
         buttonSubmit="Ajouter"
         body={body}
-        handleSubmit={this.addFolder}
+        handleSubmit={this.createFolder}
       />
     );
   }
