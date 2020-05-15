@@ -7,8 +7,12 @@ export interface AuthState {
   creds: any;
 }
 
+const delay = localStorage.getItem("expire_at")
+  ? JSON.parse(localStorage.getItem("expire_at")!) - Date.now()
+  : 0;
+
 let initialState = {
-  isAuthenticated: localStorage.getItem("id_token") ? true : false,
+  isAuthenticated: delay > 0 && localStorage.getItem("id_token") ? true : false,
   profile: null,
   creds: null,
   isFetching: false,
@@ -18,7 +22,9 @@ export default function folderReducer(
   state: AuthState = initialState,
   action: authTypes.AuthActionTypes
 ): AuthState {
-  console.log("Auth reducer : ", state, action);
+  if (!action.type.includes("INIT") && !action.type.includes("PROBE_UNKNOWN")) {
+    console.log("Auth reducer : ", state, action);
+  }
 
   switch (action.type) {
     case authTypes.LOGIN_REQUEST: {
@@ -27,6 +33,21 @@ export default function folderReducer(
         isFetching: true,
         isAuthenticated: false,
         creds: action.creds,
+      };
+    }
+    case authTypes.PROFILE_REQUEST: {
+      return {
+        ...state,
+        isFetching: true,
+        isAuthenticated: false,
+      };
+    }
+    case authTypes.PROFILE_SUCCESS: {
+      return {
+        ...state,
+        isFetching: false,
+        isAuthenticated: true,
+        profile: action.profile,
       };
     }
     case authTypes.LOGIN_SUCCESS:

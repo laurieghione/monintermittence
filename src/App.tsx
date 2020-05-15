@@ -8,7 +8,6 @@ import DeclarationForm from "./pages/DeclarationForm";
 import Summary from "./pages/Summary";
 import Archive from "./pages/Archive";
 import { connect } from "react-redux";
-import Profile from "./pages/Profile";
 import Home from "./pages/Home";
 import { getUserInfo } from "./store/actions/authAction";
 import { loadActiveFolder } from "./store/actions/folderAction";
@@ -20,7 +19,11 @@ class App extends React.Component<any> {
   }
 
   componentDidMount() {
-    if (this.props.isAuthenticated && !this.props.profile) {
+    if (
+      !this.props.isFetching &&
+      this.props.isAuthenticated &&
+      !this.props.profile
+    ) {
       this.props.getUserInfo();
     }
   }
@@ -77,7 +80,6 @@ class App extends React.Component<any> {
               return <Archive {...props} />;
             }}
           />
-          <Route path="/profile" component={Profile} />
           <Route
             path="/statistic"
             render={(props) => {
@@ -107,6 +109,7 @@ function mapStateToProps(applicationState: any) {
   return {
     isAuthenticated: applicationState.authReducer.isAuthenticated,
     profile: applicationState.authReducer.profile,
+    isFetching: applicationState.authReducer.isFetching,
   };
 }
 

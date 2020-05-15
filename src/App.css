@@ -1,6 +1,53 @@
+/** GENERAL **/
+
 .container {
   padding: 40px;
 }
+
+.warning {
+  display: flex;
+  justify-content: center;
+  margin-top: 20%;
+  flex-direction: column;
+  align-items: center;
+}
+
+.MuiTextField-root,
+.MuiAutocomplete-root,
+.MuiInputBase-root {
+  width: 100%;
+}
+
+.loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 15%;
+}
+
+/** ARCHIVE **/
+
+.folderArchive {
+  margin-top: 20px;
+  width: 100%;
+  box-shadow: 0 4px 12px 0 rgba(119, 153, 166, 0.5);
+  padding: 15px;
+  background-color: #084c88;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.folderArchiveHeader {
+  display: flex;
+  justify-content: space-between;
+}
+
+.archiveArray .MuiPaper-root {
+  width: 100%;
+}
+
+/** SUMMARY **/
 
 .tableCollapse {
   display: none;
@@ -29,19 +76,6 @@
   margin: 5px;
   font-size: 13px;
   cursor: pointer;
-}
-
-.MuiTextField-root,
-.MuiAutocomplete-root,
-.MuiInputBase-root {
-  width: 100%;
-}
-
-.loader {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 15%;
 }
 
 .month {
@@ -74,14 +108,6 @@
 .buttonContainer {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-}
-
-.warning {
-  display: flex;
-  justify-content: center;
-  margin-top: 20%;
-  flex-direction: column;
   align-items: center;
 }
 
@@ -133,6 +159,11 @@
 
 .navbar-button p {
   margin-right: 30px;
+}
+
+.profile_picture {
+  margin-right: 30px;
+  border-radius: 25px;
 }
 
 .nickName {

@@ -1,30 +1,33 @@
-import * as employerTypes from '../types/employerTypes'
-import Employer from '../../model/employer';
+import * as employerTypes from "../types/employerTypes";
+import Employer from "../../model/employer";
 
 export interface EmployerState {
-    employers : Employer[]
+  employers: Employer[];
 }
 
 export const initialState = {
-    employers : []
-}
+  employers: [],
+};
 
-export default function employerReducer(state: EmployerState = initialState, 
-  action: employerTypes.EmployerActionTypes): EmployerState {
-    
-  console.log('Employer reducer : ', state, action);
+export default function employerReducer(
+  state: EmployerState = initialState,
+  action: employerTypes.EmployerActionTypes
+): EmployerState {
+  if (!action.type.includes("INIT") && !action.type.includes("PROBE_UNKNOWN")) {
+    console.log("Employer reducer : ", state, action);
+  }
   switch (action.type) {
     case employerTypes.ADD_EMPLOYER: {
       return {
         ...state,
-        employers: [...state.employers, action.payload]
+        employers: [...state.employers, action.payload],
       };
     }
-      case employerTypes.LOAD_EMPLOYER_SUCCESS:
-        return {
-          ...state,
-          employers: action.employers
-        }
+    case employerTypes.LOAD_EMPLOYER_SUCCESS:
+      return {
+        ...state,
+        employers: action.employers,
+      };
     default:
       return state;
   }

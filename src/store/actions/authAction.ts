@@ -26,9 +26,24 @@ export function requestLogin(creds: any): authTypes.AuthActionTypes {
     creds,
   };
 }
+export function requestProfile(): authTypes.AuthActionTypes {
+  return {
+    type: authTypes.PROFILE_REQUEST,
+    isFetching: true,
+    isAuthenticated: false,
+  };
+}
 export function receiveLogin(profile: any): authTypes.AuthActionTypes {
   return {
     type: authTypes.LOGIN_SUCCESS,
+    isFetching: false,
+    isAuthenticated: true,
+    profile,
+  };
+}
+export function receiveProfile(profile: any): authTypes.AuthActionTypes {
+  return {
+    type: authTypes.PROFILE_SUCCESS,
     isFetching: false,
     isAuthenticated: true,
     profile,
@@ -69,14 +84,14 @@ export function loginUser() {
 
 export function getUserInfo() {
   return (dispatch: any) => {
-    dispatch(requestLogin(new Object()));
+    dispatch(requestProfile());
     auth.client.userInfo(
       localStorage.getItem("access_token")!,
       (err, profile) => {
         if (err) {
           console.log(err);
         }
-        dispatch(receiveLogin(profile));
+        dispatch(receiveProfile(profile));
       }
     );
   };
@@ -106,7 +121,6 @@ function setSession(authResult: any) {
   localStorage.setItem(ID_TOKEN, authResult.idToken);
   localStorage.setItem(EXPIRE_AT, expireAt);
   localStorage.setItem(SCOPES, JSON.stringify(scopes));
-  console.log("session", authResult);
   scheduleTokenRenewal();
 }
 

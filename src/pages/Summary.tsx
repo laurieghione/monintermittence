@@ -56,6 +56,167 @@ interface SummaryState {
   declarationUpdate: Declaration | null;
 }
 
+function calculAllocation(
+  salaryMax: number,
+  salary: number,
+  nbHours: number,
+  nbHoursMax: number,
+  txSalary: number,
+  txc: number,
+  min: number
+): number {
+  let indemJourn = 31.36;
+  let a = 0;
+  let b = 0;
+
+  if (salary < salaryMax) {
+    a = (indemJourn * (txSalary * salary)) / 5000;
+    b = (indemJourn * (0.26 * nbHours)) / 507;
+  } else {
+    let diffSalary = salary - salaryMax;
+    let diffHours = nbHours ? nbHours - nbHoursMax : 0;
+    a = (indemJourn * (txSalary * salaryMax) + 0.05 * diffSalary) / 5000;
+    b = (indemJourn * (0.26 * nbHoursMax) + 0.08 * diffHours) / 507;
+  }
+
+  let c = indemJourn * txc;
+
+  let alloc = Math.round((a + b + c) * 100) / 100;
+
+  //  return (alloc < min ) ? min : alloc;
+  return alloc;
+}
+
+export function getAllocation(totalFolder: any): number {
+  let maxAllocJ: number = 149.78;
+  let alloc10 = 0;
+  let alloc8 = 0;
+
+  //annexe 8
+  if (totalFolder.nbhours8 > 0) {
+    let grossSalaryMax = 14400;
+    let nbHoursMax = 720;
+    let allocMin = 38;
+
+    alloc8 = calculAllocation(
+      grossSalaryMax,
+      totalFolder.grossSalary8,
+      totalFolder.nbhours8,
+      nbHoursMax,
+      0.42,
+      0.4,
+      allocMin
+    );
+  }
+
+  //annexe 10
+  if (totalFolder.nbhours10 > 0) {
+    let grossSalaryMax = 13700;
+    let nbHoursMax = 690;
+    let allocMin = 44;
+
+    alloc10 = calculAllocation(
+      grossSalaryMax,
+      totalFolder.grossSalary10,
+      totalFolder.nbhours10,
+      nbHoursMax,
+      0.36,
+      0.7,
+      allocMin
+    );
+  }
+
+  //total
+  let total: number = Math.round((alloc8 + alloc10) * 100) / 100;
+
+  return total > maxAllocJ ? maxAllocJ : total;
+}
+export function getTotalFolder(totalMonthArray: any[]): any {
+  let totalFolder = {
+    grossSalary: 0,
+    nbhours: 0,
+    netSalary: 0,
+    rate: 0,
+    grossSalary8: 0,
+    grossSalary10: 0,
+    nbhours8: 0,
+    nbhours10: 0,
+  };
+
+  totalMonthArray.map((totalMonthdata: any) => {
+    totalFolder.netSalary += totalMonthdata.netSalary;
+    totalFolder.grossSalary8 += totalMonthdata.grossSalary8;
+    totalFolder.nbhours8 += totalMonthdata.nbhours8;
+    totalFolder.grossSalary10 += totalMonthdata.grossSalary10;
+    totalFolder.nbhours10 += totalMonthdata.nbhours10;
+  });
+
+  totalFolder.grossSalary =
+    totalFolder.grossSalary8 + totalFolder.grossSalary10;
+  totalFolder.nbhours = totalFolder.nbhours8 + totalFolder.nbhours10;
+  totalFolder.rate = totalFolder.grossSalary / totalFolder.nbhours;
+
+  return totalFolder;
+}
+export function getTotalByDeclaration(declarations: any): any {
+  let total = {
+    grossSalary: 0,
+    nbhours: 0,
+    netSalary: 0,
+    grossSalary8: 0,
+    grossSalary10: 0,
+    nbhours8: 0,
+    nbhours10: 0,
+  };
+
+  declarations.map((declaration: any) => {
+    if (Number(declaration.annexe) === 8) {
+      total.grossSalary8 += declaration.grossSalary;
+      total.nbhours8 += declaration.nbhours;
+    } else {
+      total.grossSalary10 += declaration.grossSalary;
+      total.nbhours10 += declaration.nbhours;
+    }
+    total.grossSalary += declaration.grossSalary;
+    total.nbhours += declaration.nbhours ? declaration.nbhours : 0;
+    total.netSalary += declaration.netSalary;
+  });
+
+  return total;
+}
+export function getTotalByMonth(declarationsMonthArray: any[]): any {
+  let totalMonthArray: any = [];
+
+  declarationsMonthArray.map((monthdata: any, index: number) => {
+    totalMonthArray[index] = getTotalByDeclaration(monthdata);
+  });
+  return totalMonthArray;
+}
+export function getSJM(totalFolder: any) {
+  return totalFolder.grossSalary && totalFolder.nbhours
+    ? Math.round((totalFolder.grossSalary / (totalFolder.nbhours / 8)) * 100) /
+        100
+    : 0;
+}
+export function getDeclarationByMonth(declarations: any): Promise<any> {
+  let monthArray: any[] = [];
+
+  return new Promise((resolve) => {
+    declarations.map((d: Declaration) => {
+      let month: any = moment(d.dateStart!).format("MM");
+      let year: any = moment(d.dateStart!).format("Y");
+      let index = year + month;
+      if (!monthArray[index]) {
+        monthArray[index] = [];
+      }
+      let rate = d.nbhours && d.grossSalary ? d.grossSalary / d.nbhours : 0;
+      d.rate = Math.round(rate * 100) / 100;
+      monthArray[index].push(d);
+    });
+    resolve(monthArray);
+  });
+}
+
 class Summary extends React.Component<SummaryProps & any, SummaryState> {
   private columns: any[];
   constructor(props: SummaryProps & any) {
@@ -116,82 +277,6 @@ class Summary extends React.Component<SummaryProps & any, SummaryState> {
     });
   }
 
-  calculAllocation(
-    salaryMax: number,
-    salary: number,
-    nbHours: number,
-    nbHoursMax: number,
-    txSalary: number,
-    txc: number,
-    min: number
-  ): number {
-    let indemJourn = 31.36;
-    let a = 0;
-    let b = 0;
-
-    if (salary < salaryMax) {
-      a = (indemJourn * (txSalary * salary)) / 5000;
-      b = (indemJourn * (0.26 * nbHours)) / 507;
-    } else {
-      let diffSalary = salary - salaryMax;
-      let diffHours = nbHours ? nbHours - nbHoursMax : 0;
-      a = (indemJourn * (txSalary * salaryMax) + 0.05 * diffSalary) / 5000;
-      b = (indemJourn * (0.26 * nbHoursMax) + 0.08 * diffHours) / 507;
-    }
-
-    let c = indemJourn * txc;
-
-    let alloc = Math.round((a + b + c) * 100) / 100;
-
-    //  return (alloc < min ) ? min : alloc;
-    return alloc;
-  }
-
-  getAllocation(totalFolder: any): number {
-    let maxAllocJ: number = 149.78;
-    let alloc10 = 0;
-    let alloc8 = 0;
-
-    //annexe 8
-    if (totalFolder.nbhours8 > 0) {
-      let grossSalaryMax = 14400;
-      let nbHoursMax = 720;
-      let allocMin = 38;
-
-      alloc8 = this.calculAllocation(
-        grossSalaryMax,
-        totalFolder.grossSalary8,
-        totalFolder.nbhours8,
-        nbHoursMax,
-        0.42,
-        0.4,
-        allocMin
-      );
-    }
-
-    //annexe 10
-    if (totalFolder.nbhours10 > 0) {
-      let grossSalaryMax = 13700;
-      let nbHoursMax = 690;
-      let allocMin = 44;
-
-      alloc10 = this.calculAllocation(
-        grossSalaryMax,
-        totalFolder.grossSalary10,
-        totalFolder.nbhours10,
-        nbHoursMax,
-        0.36,
-        0.7,
-        allocMin
-      );
-    }
-
-    //total
-    let total: number = Math.round((alloc8 + alloc10) * 100) / 100;
-
-    return total > maxAllocJ ? maxAllocJ : total;
-  }
-
   toggleClick = (ev: any) => {
     let id = Number(ev.currentTarget.id);
     let actives = this.state.activeId.slice();
@@ -245,79 +330,6 @@ class Summary extends React.Component<SummaryProps & any, SummaryState> {
     );
   };
 
-  getDeclarationByMonth = async (declarations: Declaration[]): Promise<any> => {
-    let monthArray: any[] = [];
-
-    return new Promise((resolve) => {
-      declarations.map((d: Declaration) => {
-        let month: any = moment(d.dateStart!).format("MM");
-        let year: any = moment(d.dateStart!).format("Y");
-        let index = year + month;
-        if (!monthArray[index]) {
-          monthArray[index] = [];
-        }
-        let rate = d.nbhours && d.grossSalary ? d.grossSalary / d.nbhours : 0;
-        d.rate = Math.round(rate * 100) / 100;
-        monthArray[index].push(d);
-      });
-      resolve(monthArray);
-    });
-  };
-
-  getTotalByMonth = (monthsArray: any[]): any => {
-    let totalMonthArray: any = [];
-
-    monthsArray.map((monthdata: any, index: number) => {
-      if (!totalMonthArray[index]) {
-        totalMonthArray[index] = {
-          grossSalary: 0,
-          nbhours: 0,
-          netSalary: 0,
-        };
-      }
-      monthdata.map((declaration: any) => {
-        totalMonthArray[index].grossSalary += declaration.grossSalary;
-        totalMonthArray[index].nbhours += declaration.nbhours
-          ? declaration.nbhours
-          : 0;
-        totalMonthArray[index].netSalary += declaration.netSalary;
-      });
-    });
-    return totalMonthArray;
-  };
-
-  getTotalByFolder = (totalMonthArray: any[]): any => {
-    let totalFolder = {
-      grossSalary: 0,
-      nbhours: 0,
-      netSalary: 0,
-      rate: 0,
-      grossSalary8: 0,
-      grossSalary10: 0,
-      nbhours8: 0,
-      nbhours10: 0,
-    };
-
-    totalMonthArray.map((totalMonthdata: any) => {
-      totalFolder.netSalary += totalMonthdata.netSalary;
-
-      if (Number(totalMonthdata.annexe) === 8) {
-        totalFolder.grossSalary8 += totalMonthdata.grossSalary;
-        totalFolder.nbhours8 += totalMonthdata.nbhours;
-      } else {
-        totalFolder.grossSalary10 += totalMonthdata.grossSalary;
-        totalFolder.nbhours10 += totalMonthdata.nbhours;
-      }
-    });
-
-    totalFolder.grossSalary =
-      totalFolder.grossSalary8 + totalFolder.grossSalary10;
-    totalFolder.nbhours = totalFolder.nbhours8 + totalFolder.nbhours10;
-    totalFolder.rate = totalFolder.grossSalary / totalFolder.nbhours;
-
-    return totalFolder;
-  };
-
   componentDidMount = () => {
     moment.locale("fr");
     console.log("componentDidMount summary");
@@ -336,12 +348,11 @@ class Summary extends React.Component<SummaryProps & any, SummaryState> {
 
       declarationPromise
         .then(() => {
-          this.getDeclarationByMonth(this.props.declarations).then(
+          getDeclarationByMonth(this.props.declarations).then(
             (monthArray: any) => {
-              console.log("monthArray", monthArray);
-              let totalMonthArray: any[] = this.getTotalByMonth(monthArray);
-              let totalFolder: any = this.getTotalByFolder(totalMonthArray);
-              let alloc: number = this.getAllocation(totalFolder);
+              let totalMonthArray: any[] = getTotalByMonth(monthArray);
+              let totalFolder: any = getTotalFolder(totalMonthArray);
+              let alloc: number = getAllocation(totalFolder);
 
               let tableRender = monthArray.map((obj: any, index: number) => {
                 return this.getTableHeader(index, totalMonthArray);
@@ -426,10 +437,10 @@ class Summary extends React.Component<SummaryProps & any, SummaryState> {
       prevProps.declarations &&
       prevProps.declarations.length !== declarations.length
     ) {
-      this.getDeclarationByMonth(declarations).then((monthArray: any) => {
-        let totalMonthArray: any[] = this.getTotalByMonth(monthArray);
-        let totalFolder: any = this.getTotalByFolder(totalMonthArray);
-        let alloc: number = this.getAllocation(totalFolder);
+      getDeclarationByMonth(declarations).then((monthArray: any) => {
+        let totalMonthArray: any[] = getTotalByMonth(monthArray);
+        let totalFolder: any = getTotalFolder(totalMonthArray);
+        let alloc: number = getAllocation(totalFolder);
 
         let tableRender = monthArray.map((obj: any, index: number) => {
           return this.getTableHeader(index, totalMonthArray);
@@ -470,8 +481,6 @@ class Summary extends React.Component<SummaryProps & any, SummaryState> {
       declarationUpdate,
     } = this.state;
 
-    console.log("render props : ", this.props);
-
     if (this.state.isLoading) {
       return (
         <div className="loader">
@@ -487,9 +496,8 @@ class Summary extends React.Component<SummaryProps & any, SummaryState> {
 
     console.log("render -> declarations", declarations);
 
-    let sjm =
-      Math.round((totalFolder.grossSalary / (totalFolder.nbhours / 8)) * 100) /
-      100;
+    let sjm = getSJM(totalFolder);
+
     return (
       <Wrapper>
         {folder && folder.active ? (

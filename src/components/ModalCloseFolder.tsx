@@ -18,7 +18,7 @@ class ModalCloseFolder extends React.Component<modalCloseFolderProps & any> {
     let closeFolder = { ...folder };
     closeFolder.active = false;
     closeFolder.dateEnd = new Date();
-    closeFolder.id = folder.id;
+    closeFolder.id = folder._id;
     closeFolder.name =
       moment(closeFolder.dateStart!).format("DD-MM-YYYY") +
       " / " +
