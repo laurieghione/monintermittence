@@ -13,24 +13,26 @@ import { getUserInfo } from "./store/actions/authAction";
 import { loadActiveFolder } from "./store/actions/folderAction";
 import Statistic from "./pages/Statistic";
 
-class App extends React.Component<any> {
-  constructor(props: any) {
-    super(props);
-  }
+interface AppProps {
+  isFetching: boolean;
+  isAuthenticated: boolean;
+  profile: any;
+  getUserInfo: () => void;
+  loadActiveFolder: (user: string) => void;
+}
 
+class App extends React.Component<AppProps> {
   componentDidMount() {
-    if (
-      !this.props.isFetching &&
-      this.props.isAuthenticated &&
-      !this.props.profile
-    ) {
+    const { isFetching, isAuthenticated, profile } = this.props;
+    if (!isFetching && isAuthenticated && !profile) {
       this.props.getUserInfo();
     }
   }
 
   componentDidUpdate(prevProps: any) {
-    if (this.props.profile && prevProps.profile !== this.props.profile) {
-      this.props.loadActiveFolder(this.props.profile.email);
+    const { profile } = this.props;
+    if (profile && prevProps.profile !== profile) {
+      this.props.loadActiveFolder(profile.email);
     }
   }
 

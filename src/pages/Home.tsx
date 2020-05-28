@@ -16,13 +16,11 @@ const Wrapper = styled.div.attrs({
 interface HomeProps {
   location: any;
   profile: any;
+  loginUser: () => void;
+  isFetching: boolean;
 }
 
-class Home extends React.Component<HomeProps & any> {
-  constructor(props: HomeProps & any) {
-    super(props);
-  }
-
+class Home extends React.Component<HomeProps> {
   componentDidMount = () => {
     if (/access_token|id_token|error/.test(this.props.location.hash)) {
       this.props.loginUser();

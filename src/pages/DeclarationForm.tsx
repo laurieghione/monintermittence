@@ -12,6 +12,7 @@ import { TextField, MenuItem } from "@material-ui/core";
 import Employer from "../model/employer";
 import { RouteProps } from "react-router";
 import { Button } from "@material-ui/core";
+import { DropzoneDialog } from "material-ui-dropzone";
 import {
   addDeclaration,
   updateDeclaration,
@@ -38,17 +39,24 @@ const Error = styled.p.attrs({})`
 interface DFProps {
   declarations: Declaration[];
   folder: Folder;
+  loadEmployers: () => any;
+  isFetching: boolean;
   employers: Employer[];
+  addEmployer: (newEmployer: Employer) => void;
+  updateDeclaration: (declaration: Declaration) => void;
+  addDeclaration: (newDeclaration: Declaration) => void;
 }
 
 interface DFState {
   declaration: Declaration;
   error: boolean;
+  open: boolean;
   disabledHours: boolean;
   disabledDateEnd: boolean;
   isEdit: boolean;
   redirect: boolean;
   employerSelected: any | null;
+  files: any[];
 }
 
 const annexe = [
@@ -67,16 +75,18 @@ const annexe = [
 ];
 
 export class DeclarationForm extends React.Component<
-  DFProps & RouteProps & any,
+  DFProps & RouteProps,
   DFState
 > {
   private params: any;
 
-  constructor(props: DFProps & RouteProps & any) {
+  constructor(props: DFProps & RouteProps) {
     super(props);
     this.state = {
       declaration: new Declaration(),
       error: false,
+      open: false,
+      files: [],
       disabledHours: false,
       disabledDateEnd: false,
       redirect: false,
@@ -152,8 +162,8 @@ export class DeclarationForm extends React.Component<
 
   handleSubmit = (event: any) => {
     event.preventDefault();
-    let { declaration, error } = this.state;
-    let { employers, auth } = this.props;
+    let { declaration, error, files, isEdit } = this.state;
+    let { employers } = this.props;
 
     let formIsValid = this.handleValidation();
     let employerExist: any;
@@ -179,7 +189,7 @@ export class DeclarationForm extends React.Component<
           });
       }
 
-      if (this.state.isEdit) {
+      if (isEdit) {
         api
           .updateDeclarationById(declaration._id, declaration)
           .then(() => {
@@ -191,9 +201,31 @@ export class DeclarationForm extends React.Component<
             console.error(error);
           });
       } else {
+        console.log("decla ", declaration);
         api
           .insertDeclaration(declaration)
           .then((data: any) => {
+            if (files.length > 0) {
+              const toBase64 = (file: any) =>
+                new Promise((resolve, reject) => {
+                  const reader = new FileReader();
+                  reader.readAsDataURL(file);
+                  reader.onload = () => resolve(reader.result);
+                  reader.onerror = (error) => reject(error);
+                });
+
+              files.forEach((file) => {
+                toBase64(file).then((result) => {
+                  const data = {
+                    data: result,
+                    type: file.type,
+                    name: file.name,
+                    declaration: declaration._id,
+                  };
+                  api.insertFile(data);
+                });
+              });
+            }
             window.alert(
               `La déclaration a bien été ajoutée ` + data.data.declaration._id
             );
@@ -241,7 +273,7 @@ export class DeclarationForm extends React.Component<
 
   componentDidMount = async () => {
     let { declaration, employerSelected, isEdit } = this.state;
-    let { auth, isFetching, folder } = this.props;
+    let { isFetching, folder } = this.props;
     console.log("componentmount declaration form");
 
     if (!isFetching && folder) {
@@ -253,7 +285,7 @@ export class DeclarationForm extends React.Component<
         //Get employers
         const employerPromise =
           !this.props.employers || this.props.employers.length === 0
-            ? this.props.loadEmployers(auth)
+            ? this.props.loadEmployers()
             : Promise.resolve(this.props.employers);
 
         return employerPromise.then(() => {
@@ -304,6 +336,10 @@ export class DeclarationForm extends React.Component<
     );
 
     return employerSelected;
+  };
+
+  setOpen = () => {
+    this.setState({ open: !this.state.open });
   };
 
   render() {
@@ -495,6 +531,41 @@ export class DeclarationForm extends React.Component<
                   />
                 </div>
               </div>
+              <Button
+                className="uploadButton"
+                variant="contained"
+                color="primary"
+                onClick={this.setOpen}
+              >
+                Ajouter Fichiers
+              </Button>
+
+              <DropzoneDialog
+                dropzoneText={"	Déposer les fichiers"}
+                acceptedFiles={["image/*", ".pdf"]}
+                dropzoneClass={"dropzoneArea"}
+                cancelButtonText={"Annuler"}
+                submitButtonText={"Ajouter"}
+                dialogTitle={"Ajouter fichiers"}
+                previewText={"Prévisualisation"}
+                maxFileSize={5000000000}
+                filesLimit={5}
+                open={this.state.open}
+                onClose={this.setOpen}
+                getFileAddedMessage={(fileName) => {
+                  return "Fichier " + fileName + " ajouté";
+                }}
+                getFileRemovedMessage={(fileName) => {
+                  return "Fichier " + fileName + " retiré";
+                }}
+                onSave={(files) => {
+                  console.log("Files:", files);
+                  this.setState({ files });
+                  this.setOpen();
+                }}
+                showPreviews={true}
+                showFileNamesInPreview={true}
+              />
               {this.state.error && (
                 <Error>Veuillez renseigner tous les champs obligatoires</Error>
               )}

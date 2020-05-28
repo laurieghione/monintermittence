@@ -44,12 +44,23 @@ export function loadDeclarationSuccess(
   };
 }
 
-export function loadDeclarations(folderId: string) {
+export function loadDeclarations(folderId: string): any {
   return function (dispatch: any) {
     return apis
       .getDeclarationsByFolder(folderId)
       .then((declarations: any) => {
-        dispatch(loadDeclarationSuccess(declarations.data.data));
+        let declaArray = declarations.data.data;
+        let array: any[] = [];
+        declaArray.forEach((element: any) => {
+          /* apis.getFileByDeclaration(element._id).then((files) => {
+            console.log(files);
+            if (files.data.file.length > 0) {
+              element.files = files.data.file;
+            }
+          });*/
+          array.push(element);
+        });
+        dispatch(loadDeclarationSuccess(array));
       })
       .catch((err) => {
         console.error(err);

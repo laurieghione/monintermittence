@@ -27,8 +27,10 @@ export function loadFolderSuccess(
 export function loadActiveFolder(user: string) {
   return async function (dispatch: any) {
     try {
-      const folder = await apis.getActiveFolder(user);
-      dispatch(loadFolderSuccess(folder.data.data));
+      const result = await apis.getActiveFolder(user);
+      let folder = result.data.data;
+      folder.id = folder._id;
+      dispatch(loadFolderSuccess(folder));
     } catch (err) {
       console.log(err);
     }

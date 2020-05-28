@@ -8,15 +8,13 @@ import { logout, login } from "../store/actions/authAction";
 interface LinksProps {
   isAuthenticated: boolean;
   profile: any;
+  login: () => void;
+  logout: () => void;
   isFetching: boolean;
   folder: any;
 }
 
-class Links extends React.Component<LinksProps & any> {
-  constructor(props: LinksProps & any) {
-    super(props);
-  }
-
+class Links extends React.Component<LinksProps> {
   render() {
     const {
       isAuthenticated,

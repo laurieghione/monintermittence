@@ -20,7 +20,7 @@ export function loadEmployerSuccess(
   };
 }
 
-export function loadEmployers() {
+export function loadEmployers(): any {
   return function (dispatch: any) {
     return apis
       .getEmployers()

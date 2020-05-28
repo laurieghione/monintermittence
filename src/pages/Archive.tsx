@@ -7,13 +7,13 @@ import {
   getAllocation,
   getDeclarationByMonth,
   getTotalByDeclaration,
-  getTotalFolder,
   getTotalByMonth,
   getSJM,
 } from "./Summary";
 import styled from "styled-components";
 import { ArrowUpward } from "@material-ui/icons";
 import moment from "moment";
+import Folder from "../model/folder";
 
 const Wrapper = styled.div.attrs({
   className: "container",
@@ -65,8 +65,8 @@ interface ArchiveProps {
 }
 
 interface ArchiveState {
-  folders: any[];
-  activeId: any;
+  folders: Folder[];
+  activeId: number | null;
   isLoading: boolean;
 }
 

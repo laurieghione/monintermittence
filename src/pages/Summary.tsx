@@ -1,15 +1,16 @@
 import React from "react";
+
 import { bindActionCreators } from "redux";
 import moment from "moment";
 import { connect } from "react-redux";
 import styled from "styled-components";
+
 import "moment/locale/fr";
-import Folder from "../model/folder";
 import Declaration from "../model/declaration";
 import api from "../api";
 import { Redirect } from "react-router-dom";
 import MaterialTable from "material-table";
-import { ArrowUpward, Edit, Delete, Close } from "@material-ui/icons";
+import { ArrowUpward, Edit, Delete, Close, GetApp } from "@material-ui/icons";
 import CircularProgress from "@material-ui/core/CircularProgress";
 import IconButton from "@material-ui/core/IconButton";
 import { Button } from "@material-ui/core";
@@ -39,22 +40,6 @@ const Tagheaders = styled.span.attrs({
   background-color: #084c88;
   color: white;
 `;
-interface SummaryProps {
-  declarations: Declaration[];
-  folder: Folder;
-}
-
-interface SummaryState {
-  monthArray: any[];
-  activeId: any[];
-  totalMonthArray: any[];
-  isLoading: boolean;
-  openModal: boolean;
-  totalFolder: any;
-  tableRender: any;
-  alloc: number;
-  declarationUpdate: Declaration | null;
-}
 
 function calculAllocation(
   salaryMax: number,
@@ -143,7 +128,7 @@ export function getTotalFolder(totalMonthArray: any[]): any {
     nbhours10: 0,
   };
 
-  totalMonthArray.map((totalMonthdata: any) => {
+  totalMonthArray.forEach((totalMonthdata: any) => {
     totalFolder.netSalary += totalMonthdata.netSalary;
     totalFolder.grossSalary8 += totalMonthdata.grossSalary8;
     totalFolder.nbhours8 += totalMonthdata.nbhours8;
@@ -169,7 +154,7 @@ export function getTotalByDeclaration(declarations: any): any {
     nbhours10: 0,
   };
 
-  declarations.map((declaration: any) => {
+  declarations.forEach((declaration: any) => {
     if (Number(declaration.annexe) === 8) {
       total.grossSalary8 += declaration.grossSalary;
       total.nbhours8 += declaration.nbhours;
@@ -187,7 +172,7 @@ export function getTotalByDeclaration(declarations: any): any {
 export function getTotalByMonth(declarationsMonthArray: any[]): any {
   let totalMonthArray: any = [];
 
-  declarationsMonthArray.map((monthdata: any, index: number) => {
+  declarationsMonthArray.forEach((monthdata: any, index: number) => {
     totalMonthArray[index] = getTotalByDeclaration(monthdata);
   });
   return totalMonthArray;
@@ -202,7 +187,7 @@ export function getDeclarationByMonth(declarations: any): Promise<any> {
   let monthArray: any[] = [];
 
   return new Promise((resolve) => {
-    declarations.map((d: Declaration) => {
+    declarations.forEach((d: Declaration) => {
       let month: any = moment(d.dateStart!).format("MM");
       let year: any = moment(d.dateStart!).format("Y");
       let index = year + month;
@@ -217,9 +202,29 @@ export function getDeclarationByMonth(declarations: any): Promise<any> {
   });
 }
 
-class Summary extends React.Component<SummaryProps & any, SummaryState> {
+interface SummaryProps {
+  declarations: Declaration[];
+  folder: any;
+  isFetching: boolean;
+  loadDeclarations: (folderId: string) => any;
+  deleteDeclaration: (declaration: Declaration) => void;
+}
+
+interface SummaryState {
+  monthArray: any[];
+  activeId: any[];
+  totalMonthArray: any[];
+  isLoading: boolean;
+  openModal: boolean;
+  totalFolder: any;
+  tableRender: any;
+  alloc: number;
+  declarationUpdate: Declaration | null;
+}
+
+class Summary extends React.Component<SummaryProps, SummaryState> {
   private columns: any[];
-  constructor(props: SummaryProps & any) {
+  constructor(props: SummaryProps) {
     super(props);
     this.state = {
       monthArray: [],
@@ -274,6 +279,23 @@ class Summary extends React.Component<SummaryProps & any, SummaryState> {
   deleteDeclaration(declaration: Declaration) {
     api.deleteDeclarationById(declaration._id).then(() => {
       this.props.deleteDeclaration(declaration);
+    });
+  }
+
+  downloadFiles(declaration: Declaration) {
+    api.getFileByDeclaration(declaration._id).then((data: any) => {
+      let datas = data.data.file;
+      if (datas.length > 0) {
+        datas.forEach((element: any) => {
+          let file = element.data;
+          const downloadLink = document.createElement("a");
+          const fileName = element.name;
+
+          downloadLink.href = file;
+          downloadLink.download = fileName;
+          downloadLink.click();
+        });
+      }
     });
   }
 
@@ -333,17 +355,17 @@ class Summary extends React.Component<SummaryProps & any, SummaryState> {
   componentDidMount = () => {
     moment.locale("fr");
     console.log("componentDidMount summary");
-    const { isFetching } = this.props;
+    const { isFetching, folder, declarations } = this.props;
 
     if (!isFetching) {
-      if (!this.props.folder) {
+      if (!folder) {
         this.setState({ isLoading: false });
         return;
       }
       //Get declarations
       const declarationPromise =
-        !this.props.declarations || this.props.declarations.length === 0
-          ? this.props.loadDeclarations(this.props.folder._id)
+        !declarations || declarations.length === 0
+          ? this.props.loadDeclarations(folder._id)
           : Promise.resolve(this.props.declarations);
 
       declarationPromise
@@ -424,6 +446,11 @@ class Summary extends React.Component<SummaryProps & any, SummaryState> {
                       icon: () => <Delete fontSize="small" />,
                       onClick: (event, rowData) =>
                         this.deleteDeclaration(rowData as Declaration),
+                    },
+                    {
+                      icon: () => <GetApp fontSize="small" />,
+                      onClick: (event, rowData) =>
+                        this.downloadFiles(rowData as Declaration),
                     },
                   ]}
                 />

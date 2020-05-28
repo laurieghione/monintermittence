@@ -18,7 +18,10 @@ const Wrapper = styled.div.attrs({
 })``;
 
 interface StatisticProps {
-  declarations: any;
+  declarations: Declaration[];
+  isFetching: boolean;
+  folder: any;
+  loadDeclarations: (folderId: string) => any;
 }
 interface StatisticState {
   barData: any;
@@ -26,8 +29,8 @@ interface StatisticState {
   isLoading: boolean;
 }
 
-class Statistic extends React.Component<StatisticProps & any, StatisticState> {
-  constructor(props: StatisticProps & any) {
+class Statistic extends React.Component<StatisticProps, StatisticState> {
+  constructor(props: StatisticProps) {
     super(props);
     this.state = {
       barData: [],
@@ -45,7 +48,7 @@ class Statistic extends React.Component<StatisticProps & any, StatisticState> {
     let nameMemory: any = "";
 
     return new Promise((resolve) => {
-      declarations.map((decla: Declaration) => {
+      declarations.forEach((decla: Declaration) => {
         let month: any = moment(decla.dateStart!).format("MMM");
         let year: any = moment(decla.dateStart!).format("Y");
         let name = month + " " + year;
@@ -96,11 +99,11 @@ class Statistic extends React.Component<StatisticProps & any, StatisticState> {
   };
 
   componentDidMount() {
-    const { isFetching, folder } = this.props;
+    const { isFetching, folder, declarations } = this.props;
 
     if (!isFetching && folder) {
       const declarationPromise =
-        !this.props.declarations || this.props.declarations.length === 0
+        !declarations || declarations.length === 0
           ? this.props.loadDeclarations(folder._id)
           : Promise.resolve(this.props.declarations);
 

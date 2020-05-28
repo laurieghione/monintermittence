@@ -11,6 +11,12 @@ export const insertDeclaration = (payload) =>
       Authorization: `Bearer ${localStorage.getItem("access_token")}`,
     },
   });
+export const insertFile = (payload) =>
+  api.post(`/file`, payload, {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+    },
+  });
 export const insertFolder = (payload) =>
   api.post(`/folder`, payload, {
     headers: {
@@ -25,6 +31,12 @@ export const getDeclarationsByFolder = (folder) =>
   });
 export const getActiveFolder = (user) =>
   api.get(`/folder/${user}`, {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+    },
+  });
+export const getFileByDeclaration = (declaration) =>
+  api.get(`/file/${declaration}`, {
     headers: {
       Authorization: `Bearer ${localStorage.getItem("access_token")}`,
     },
@@ -84,6 +96,8 @@ const apis = {
   updateDeclarationById,
   updateFolderById,
   getFolders,
+  insertFile,
+  getFileByDeclaration,
 };
 
 export default apis;
