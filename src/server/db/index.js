@@ -1,11 +1,15 @@
-const mongoose = require('mongoose')
+const mongoose = require("mongoose");
+require("dotenv").config();
 
-mongoose.connect('mongodb://127.0.0.1:27017/entertainment', 
-{ useNewUrlParser: true, useUnifiedTopology: true })
-    .catch((e) => {
-        console.error('Connection error', e.message)
-    })
+mongoose
+  .connect("mongodb://" + process.env.MONGODB_URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .catch((e) => {
+    console.error("Connection error", e.message);
+  });
 
-const db = mongoose.connection
+const db = mongoose.connection;
 
-module.exports = db
+module.exports = db;

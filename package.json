@@ -50,8 +50,11 @@
   },
   "scripts": {
     "start": "run-p start:client server",
+    "start-prod": "run-p start:client-prod server-prod",
+    "start:client-prod": "set PORT=8080 && react-scripts start",
     "start:client": "set PORT=8081 && react-scripts start",
     "server": "node src/server/index.js",
+    "server-prod": "node src/server/index-prod.js",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

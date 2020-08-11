@@ -2,7 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const router = require("./routes/router");
-const db = require("./db/index.js");
+const db = require("./db/index-prod.js");
 const jwt = require("express-jwt");
 const jwksRsa = require("jwks-rsa");
 require("dotenv").config();
